@@ -1,22 +1,51 @@
-all: alu shifter
+# Compilation variables
+CC = ghdl
+CFLAGS = -a -v
+TBFLAGS = -e -v
+RUNFLAGS = -r
 
-exe : alu shifter exec_guillaume.o fifo_72b.vhdl
+# object files
+OADDER32 = adder32.o
+OALU = alu.o $(OADDER32)
+OSHIFTER = shifter.o
+OEXEC = $(OALU) $(OSHIFTER) exec.o fifo_72b.o
 
+# MOAB (Mother Of All Binaries)
+all: alu shifter exec adder32
 
-alu: alu.o alu_tb.o adder32.o
-	ghdl -e -v alu_tb
+# Test Bench maker
+exec : $(OEXEC) exec_tb.o
+	$(CC) $(TBFLAGS) exec_tb
 
-shifter: shifter.o shifter_tb.o
-	ghdl -e -v shifter_tb
+adder32 : $(OADDER32) adder32_tb.o
+	$(CC) $(TBFLAGS) adder32_tb
 
+alu: $(OALU) alu_tb.o
+	$(CC) $(TBFLAGS) alu_tb
+
+shifter: $(OSHIFTER) shifter_tb.o
+	$(CC) $(TBFLAGS) shifter_tb
+
+# Object file maker
 %.o: %.vhdl
-	ghdl -a -v $<
+	$(CC) $(CFLAGS) $<
+
+# Test Banch runner
+run_adder32: adder32
+	$(CC) $(RUNFLAGS) adder32_tb --vcd=adder32.vcd
 
 run_alu: alu
-	ghdl -r alu_tb --vcd=alu.vcd
+	$(CC) $(RUNFLAGS) alu_tb --vcd=alu.vcd
 
 run_shifter: shifter
-	ghdl -r shifter_tb --vcd=shifter.vcd
+	$(CC) $(RUNFLAGS) shifter_tb --vcd=shifter.vcd
 
+run_exec: exec
+	$(CC) $(RUNFLAGS) exec_tb --vcd=exec.vcd
+
+
+# The Janitor
 clean:
-	@rm *.o *.vcd  *~ alu_tb adder32_tb fa_tb shifter_tb
+	-rm *.o *.vcd
+	-rm *~
+	-rm alu_tb adder32_tb shifter_tb exec_tb
