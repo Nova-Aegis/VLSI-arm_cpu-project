@@ -1,3 +1,12 @@
+# TODO
+
+ - (fait) Comprendre le fonctionement de fifo.
+ - Finir l'étage EXEC.
+ - Faire un test bench pour l'étage EXEC.
+ - Rajouter un peu de commentaire ici et là.
+ - Poser des questions à Jean-Lou.
+ - Faire les schéma des étage IFC, DECODE, MEMORY.
+
 # QUESTIONNEMENT
 
 ## EXE
