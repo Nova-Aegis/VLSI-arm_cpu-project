@@ -2,7 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity EXE is
+entity EXEC is
 	port (
 	-- Decode interface synchro
 			dec2exe_empty	: in Std_logic;
@@ -72,11 +72,11 @@ entity EXE is
 			reset_n			: in Std_logic;
 			vdd				: in bit;
 			vss				: in bit);
-end EXE;
+end EXEC;
 
 ----------------------------------------------------------------------
 
-architecture Behavior OF EXec is
+architecture Behavior OF EXEC is
 
 component shifter
 	port(
@@ -161,15 +161,15 @@ begin
 		shift_asr	=> dec_shift_asr,
 		shift_ror	=> dec_shift_ror,
 		shift_rrx	=> dec_shift_rrx,
-		sh_val		=> dec_shift_val,
+		shift_val	=> dec_shift_val,
 
-		din			=> dec_op2,
-		cin			=> dec_cy,
+		din			  => dec_op2,
+		cin			  => dec_cy,
 
-		dout		=> op2_shift,
-		cout		=> shift_c,
-		vdd			=> vdd,
-		vss			=> vss
+		dout		  => op2_shift,
+		cout		  => shift_c,
+		vdd			  => vdd,
+		vss			  => vss
 	);
 
 	alu_inst : alu
@@ -182,9 +182,9 @@ begin
 
 		res		 => alu_res,
 		cout	 => alu_c,
-		z		 => exe_z,
-		n		 => exe_n,
-		v		 => exe_v,
+		z		   => exe_z,
+		n		   => exe_n,
+		v		   => exe_v,
 
 		vdd		 => vdd,
 		vss		 => vss
@@ -199,7 +199,7 @@ begin
 
 		din(67 downto 64) => dec_mem_dest,
 		din(63 downto 32) => dec_mem_data,
-		din(31 downto 0) => mem_adr,
+		din(31 downto 0)  => mem_adr,
 
 		dout(71)	 => exe_mem_lw,
 		dout(70)	 => exe_mem_lb,
@@ -210,23 +210,23 @@ begin
 		dout(63 downto 32) => exe_mem_data,
 		dout(31 downto 0)  => exe_mem_adr,
 
-		push	 => exe_push,
-		pop		 => mem_pop,
+		push	  => exe_push,
+		pop		  => mem_pop,
 
-		empty		 => exe2mem_empty,
-		full		 => exe2mem_full,
+		empty	  => exe2mem_empty,
+		full		=> exe2mem_full,
 
 		reset_n	 => reset_n,
-		ck		 => ck,
-		vdd		 => vdd,
-		vss		 => vss
+		ck		   => ck,
+		vdd		   => vdd,
+		vss		   => vss
 	);
 
 
   --- CALCULATIONS
   -- op2 calc
-  op2 <= shift_op2 when (dec_comp_op2 = '0')
-          else (not shift_op2);
+  op2 <= op2_shift when (dec_comp_op2 = '0')
+          else (not op2_shift);
   -- op1 calc
   op1 <= dec_op1 when (dec_comp_op2 = '0')
          else (not dec_op1);
@@ -244,7 +244,7 @@ begin
 
   --- MEM CALCULATION
   -- mem acess calc
-  mem_acess <= dec_mem_lw or
+  mem_acces <= dec_mem_lw or
                dec_mem_lb or
                dec_mem_sw or
                dec_mem_sb;
@@ -254,11 +254,11 @@ begin
              else alu_res;
 
   --- MEM BUFFER HANDLING
-  push <= mem_acess;
+  exe_push <= mem_acces;
   
   
   --- FETCH NEXT OPERATION
-  exe_pop <= '1' when (mem_acess = '0')
+  exe_pop <= '1' when (mem_acces = '0')
              else ( '0' -- WIP modifier svp
                     );
   
