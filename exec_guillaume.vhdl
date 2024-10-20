@@ -2,7 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity exec is
+entity EXE is
 	port (
 	-- Decode interface synchro
 			dec2exe_empty	: in Std_logic;
@@ -72,11 +72,11 @@ entity exec is
 			reset_n			: in Std_logic;
 			vdd				: in bit;
 			vss				: in bit);
-end exec;
+end EXE;
 
 ----------------------------------------------------------------------
 
-architecture Behavior OF exec is
+architecture Behavior OF EXec is
 
 component shifter
 	port(
@@ -106,10 +106,10 @@ component alu
 		cmd			: in Std_Logic_Vector(1 downto 0);
 		
 		res			: out Std_Logic_Vector(31 downto 0);
-		cout		: out Std_Logic;
-		z			: out Std_Logic;
-		n			: out Std_Logic;
-		v			: out Std_Logic;
+		cout			: out Std_Logic;
+		z				: out Std_Logic;
+		n				: out Std_Logic;
+		v				: out Std_Logic;
 		
 		vdd			: in bit;
 		vss			: in bit);
@@ -118,24 +118,24 @@ end component;
 component fifo_72b
 	port(
 		din			: in std_logic_vector(71 downto 0);
-		dout		: out std_logic_vector(71 downto 0);
+		dout			: out std_logic_vector(71 downto 0);
 
 		-- commands
-		push		: in std_logic;
+		push			: in std_logic;
 		pop			: in std_logic;
 
 		-- flags
-		full		: out std_logic;
-		empty		: out std_logic;
+		full			: out std_logic;
+		empty			: out std_logic;
 
 		reset_n		: in std_logic;
-		ck			: in std_logic;
+		ck				: in std_logic;
 		vdd			: in bit;
 		vss			: in bit);
 end component;
 
 
-signal shift_c 		: std_logic;
+signal shift_c 	: std_logic;
 signal alu_c 		: std_logic;
 
 signal op2			: std_logic_vector(31 downto 0);
@@ -161,14 +161,13 @@ begin
 		shift_asr	=> dec_shift_asr,
 		shift_ror	=> dec_shift_ror,
 		shift_rrx	=> dec_shift_rrx,
-		shift_val	=> dec_shift_val,
+		sh_val		=> dec_shift_val,
 
 		din			=> dec_op2,
 		cin			=> dec_cy,
 
 		dout		=> op2_shift,
 		cout		=> shift_c,
-
 		vdd			=> vdd,
 		vss			=> vss
 	);
@@ -223,87 +222,84 @@ begin
 		vss		 => vss
 	);
 
-  
-  --- calc op2
-  op2 <= op2_shift when dec_comp_op2 = '0'
-         else not op2_shift;
-  -- if dec_comp_op2 = '0' then
-  --   op2 <= op2_shift;
-  -- else -- not ( shift_op2 )
-  --   op2 <= not op2_shift;
-  -- end if;
 
-  --- calc op1
-  op1 <= dec_op1 when dec_comp_op1 = '0'
-         else not dec_op1;
-  -- if dec_comp_op1 = '0' then 
-  --   op1 <= dec_op1;
-  -- else -- not op1
-  --   op1 <= not dec_op2;
-  -- end if;
+  --- CALCULATIONS
+  -- op2 calc
+  op2 <= shift_op2 when (dec_comp_op2 = '0')
+          else (not shift_op2);
+  -- op1 calc
+  op1 <= dec_op1 when (dec_comp_op2 = '0')
+         else (not dec_op1);
 
-  --- sortie alu
+  --- EXE -> DEC
+  -- exe_res relay
   exe_res <= alu_res;
-  mem_adr <= alu_res when dec_pre_index = '1'
-             else dec_op1;
-
-
-  
-  
-  exe_push <= '1' when (not exe2mem_full and (dec_exe_lw or dec_exe_lb or dec_exe_sw or dec_exe_sb)) = '1' else '0';
-  
-  if dec_exe_wb = '0' then -- vers DEC
-    exe_res <= alu_res;
-    exe_pop <= '1';
-  else -- vers MEM
-    -- alu_res => buffer ???
-    if exe2mem_full = '0' then
-      exe_push <= '1'; 
-      if dec_pre_index = '1' then
-        mem_adr <= alu_res;
-      else 
-        mem_adr <= dec_op1;
-      end if;
-      exe_pop <= '1';
-    end if;
-    
-  end if;
-
-  --- sortie flags alu
+  -- exe_c calc
+  exe_c <= alu_c when (dec_alu_cmd = "00")
+           else shift_c;
+  -- dest & write back
+  exe_dest <= dec_exe_dest;
+  exe_wb <= dec_exe_wb;
   exe_flag_wb <= dec_flag_wb;
-  if dec_alu_cmd = "00" then -- update carry flag for Add
-    exe_c <= alu_c;
-  else
-    exe_c <= shift_c;
-  end if;
 
-      
-	--- dec data -> mem data ???
-	-- dec_mem_data => buffer
+  --- MEM CALCULATION
+  -- mem acess calc
+  mem_acess <= dec_mem_lw or
+               dec_mem_lb or
+               dec_mem_sw or
+               dec_mem_sb;
 
--- res_reg mem_adr exe_push mem_acces
+  -- mem_adr calc
+  mem_adr <= dec_op1 when (dec_pre_index = '0')
+             else alu_res;
 
--- synchro
-	-- mem_adr <= X"00000000";
-	-- mem_acces <= '0';
-	-- exe_push <= '1';
+  --- MEM BUFFER HANDLING
+  push <= mem_acess;
+  
+  
+  --- FETCH NEXT OPERATION
+  exe_pop <= '1' when (mem_acess = '0')
+             else ( '0' -- WIP modifier svp
+                    );
+  
 
-	-- exe_pop	<= '0';
 
--- cout
-	-- exe_c <= '0';
 
--- ALU opearandes
 
-	-- op1 <=	X"00000000";
 
-	-- op2 <=	X"00000000";
 
--- Loop dec
 
-	-- exe_dest <= '1:
-	-- exe_wb <= '1;
-	-- exe_flag_wb <= '0';
 
-	-- exe_res <= X"00000000";
+
+
+
+
+
+
+
+
+  
+-- -- synchro
+-- 	mem_adr <= X"00000000";
+-- 	mem_acces <= '0';
+-- 	exe_push <= '1';
+
+-- 	exe_pop	<= '0';
+
+-- -- cout
+-- 	exe_c <= '0';
+
+-- -- ALU opearandes
+
+-- 	op1 <=	X"00000000";
+
+-- 	op2 <=	X"00000000";
+
+-- -- Loop dec
+
+-- 	exe_dest <= '1:
+-- 	exe_wb <= '1;
+-- 	exe_flag_wb <= '0';
+
+-- 	exe_res <= X"00000000";
 end Behavior;
