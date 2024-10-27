@@ -3,12 +3,12 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 --library work;
 
-entity exe_tb is
-end exe_tb;
+entity exec_tb is
+end exec_tb;
 
-architecture Structurel of alu_tb is
+architecture sim of exec_tb is
 
-  component exec
+  component EXEC
     port (
       -- Decode interface synchro
 			dec2exe_empty	: in Std_logic;
@@ -79,13 +79,184 @@ architecture Structurel of alu_tb is
 			vdd				: in bit;
 			vss				: in bit);
   end component;
+
+  constant period : time := 10 ms;
+	signal valide : std_logic := '1';
   
-  signal op1, op2 : std_logic_vector(31 downto 0); -- entre
-  signal exe_dec, exe_mem : std_logic_vector(31 downto 0); -- sortie
+	signal dec2exe_empty : std_logic := '0';
+	signal mem_pop : std_logic := '0';
+	signal ck : std_logic := '0';
+	signal reset_n : std_logic := '0';
 
-  signal dec2exe_empty, exe_pop : std_logic; -- decode synchro
+	signal exe_pop, dec_wb, sw, exe_wb, flag_wb, exe2mem_empty : std_logic;
+	signal alu_cmd : std_logic_vector(1 downto 0);
+	signal flag, exe_reg, mem_acces, mem_reg : std_logic_vector(3 downto 0);
+	signal op1, op2, exe_res, mem_adr, mem_data : std_logic_vector(31 downto 0);
 
+	-- NOTE : commencer avec reset_n = '0' et mem_pop ='1' pour initialiser la
+	-- fifo. Après un rising_edge(ck) mettre reset_n = '1' et mem_pop = '0'
+	
+begin
+	exec_0 : EXEC
+    port map (
+      dec2exe_empty => dec2exe_empty,
+      exe_pop => exe_pop,
 
+      dec_op1 => op1,
+      dec_op2 => op2,
+      dec_exe_dest => "0100",
+      dec_exe_wb => dec_wb,
+      dec_flag_wb => '0',
 
+      dec_mem_data => x"22222222",
+      dec_mem_dest => "1000",
+      dec_pre_index => '1',
 
-  
+      dec_mem_lw => '0',
+      dec_mem_lb => '0',
+      dec_mem_sw => sw,
+      dec_mem_sb => '0',
+
+      dec_shift_lsl => '0',
+      dec_shift_lsr => '0',
+      dec_shift_asr => '1',
+      dec_shift_ror => '0',
+      dec_shift_rrx => '0',
+      dec_shift_val => "00000",
+      dec_cy => '0',
+
+      dec_comp_op1 => '0',
+      dec_comp_op2 => '0',
+      dec_alu_cy => '0',
+
+      dec_alu_cmd => alu_cmd,
+
+      exe_res => exe_res,
+
+      exe_c => flag(0),
+      exe_v => flag(1),
+      exe_n => flag(2),
+      exe_z => flag(3),
+
+      exe_dest => exe_reg,
+      exe_wb => exe_wb,
+      exe_flag_wb => flag_wb,
+
+      exe_mem_adr	=> mem_adr,
+      exe_mem_data => mem_data,
+      exe_mem_dest => mem_reg,
+
+      exe_mem_lw => mem_acces(0),
+      exe_mem_lb => mem_acces(1),
+      exe_mem_sw => mem_acces(2),
+      exe_mem_sb => mem_acces(3),
+      
+      exe2mem_empty => exe2mem_empty,
+      mem_pop => mem_pop,
+      
+      ck => ck,
+      reset_n => reset_n,
+      vdd => '1',
+      vss => '0'
+      );
+	ck <= not ck after period/2 when valide = '1' else '0';
+	
+	process(ck)
+	begin
+		if (rising_edge(ck)) then
+			report "";
+			report "ck rising edge";
+			report "";
+		end if;
+	end process;
+	
+
+	process
+	begin
+		
+    -- clock
+    assert false report "start of test" severity note;
+
+    dec2exe_empty <= '0';
+    sw <= '0';
+    wait until rising_edge(ck);
+		assert (exe2mem_empty = '1') report "Start fifo not empty" severity error;
+    reset_n <= '1';
+
+    -- Test Case 1 add
+    assert (exe_pop = '1') report "Test pop starts at 1 Failed" severity error;
+    op1 <= x"FFFFFFFF";
+    op2 <= x"00000001";
+    dec_wb <= '1';
+    alu_cmd <= "00";
+    wait until rising_edge(ck);
+		assert (exe2mem_empty = '1') report "Start fifo not empty" severity error;
+    assert (exe_res = x"00000000") report "Test Case 1 res Failed" severity error;
+    assert (flag = "1011") report "Test Case 1 flag Failed" severity error;
+    assert (exe_pop = '1') report "Test Case 1 pop Failed" severity error;
+    assert (exe_reg = "0100") report "Test Case 1 reg Failed" severity error;
+    assert (exe_wb = '1') report "Test Case 1 wb Failed" severity error;
+    assert (flag_wb = '0') report "Test Case 1 fwb Failed" severity error;
+    assert false report "Test Case 1 complete" severity note;
+    
+    -- Test Case 2 mem
+    assert (exe_pop = '1') report "Test pop starts at 2 Failed" severity error;
+    sw <= '1';
+    op1 <= x"00000001";
+    op2 <= x"00000001";
+    dec_wb <= '1';
+    alu_cmd <= "00";
+
+    wait until rising_edge(ck);
+    assert (exe_res = x"00000002") report "Test Case 2 res Failed" severity error;
+    assert (flag = "0000") report "Test Case 2 flag Failed" severity error;
+    assert (exe_reg = "0100") report "Test Case 2 reg Failed" severity error;
+    assert (exe_wb = '1') report "Test Case 2 wb Failed" severity error;
+    assert (flag_wb = '0') report "Test Case 2 fwb Failed" severity error;
+    assert (exe2mem_empty = '0') report "Test case 2 fifo not empty Failed" severity error;
+		assert false report "Test Case 2 complete" severity note;
+    
+    -- Test Case 3 mem buffer full
+    assert (exe_pop = '1') report "Test pop starts at 3 Failed" severity error;
+    sw <= '1';
+    op1 <= x"00000010";
+    op2 <= x"00000010";
+    dec_wb <= '1';
+    alu_cmd <= "00";
+		mem_pop <= '1';
+
+    wait until rising_edge(ck);
+		
+    assert (exe_pop = '0') report "Test case 3 pop Failed" severity error;
+    mem_pop <= '0';
+    sw <= '0';
+    assert (exe_res = x"00000020") report "Test Case 3 res Failed" severity error;
+    assert (flag = "0000") report "Test Case 3 flag Failed" severity error;
+    assert (exe_reg = "0100") report "Test Case 3 reg Failed" severity error;
+    assert (exe_wb = '1') report "Test Case 3 wb Failed" severity error;
+    assert (flag_wb = '0') report "Test Case 3 fwb Failed" severity error;
+		--report to_hstring(mem_adr);
+    assert (mem_adr = x"00000002") report "Test Case 3 mem_adr Failed" severity error; 
+    assert (mem_data = x"22222222") report "Test Case 3 mem_data Failed" severity error;
+    assert (mem_reg = "1000") report "Test Case 3 mem_reg Failed" severity error;
+    assert (mem_acces = "0100") report "Test Case 3 mem_acces Failed" severity error;
+    assert (exe2mem_empty = '1') report "Test case 3 fifo empty Failed" severity error;
+    assert false report "Test Case 3 complte" severity note;
+
+    -- Test Case 4 emptying buffer
+    wait until rising_edge(ck);
+    assert (exe_pop = '1') report "Test case 4 pop Failed" severity error;
+    assert (exe2mem_empty = '1') report "Test case 4 fifo empty Failed" severity error;
+    assert (mem_adr = x"00000002") report "Test Case 4 mem_adr Failed" severity error; 
+    assert (mem_data = x"22222222") report "Test Case 4 mem_data Failed" severity error;
+    assert (mem_reg = "1000") report "Test Case 4 mem_reg Failed" severity error;
+    assert (mem_acces = "0100") report "Test Case 4 mem_acces Failed" severity error;
+    assert false report "Test Case 4 complte" severity note;
+
+    assert false report "end of test" severity note;
+    --  Wait forever; this will finish the simulation.
+
+		valide <= '0';
+    wait;
+  end process;
+end architecture;

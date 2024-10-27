@@ -18,7 +18,7 @@ port ( op1 : in std_logic_vector(31 downto 0);
 end Alu;
 
 
-architecture behavioral of Alu is
+architecture dataflow of Alu is
 
 	component Add32b
 	port (
@@ -45,33 +45,20 @@ architecture behavioral of Alu is
 			S => res_add
 		);
 
-	process (cmd, op1, op2)
-	begin
-		case cmd is
-			when "01" =>
-				res_tmp <= op1 and op2;
-				v <= '0';
-			when "10" =>
-				res_tmp <= op1 or op2;
-				v <= '0';
-			when "11" =>
-				res_tmp <= op1 xor op2;
-				v <= '0';
-			when others =>
-				res_tmp <= res_add;
-				v <= res_add_cout xor res_add(31);
-		end case;
-
-		cout <= res_add_cout;
-		
-		if res_tmp = x"00000000" then 
-			z <= '1';		
-		else
-			z <= '0';
-		end if;
-
-		n <= res_tmp(31);
+    with cmd select res_tmp <=
+      (op1 and op2) when "01",
+      (op1 or op2) when "10",
+      (op1 xor op2) when "11",
+      res_add when others;
+    v <= (res_add_cout xor res_add(31)) and (not cmd(1) and not cmd(0));
+    -- res_tmp <= (op1 and op2) when cmd = "01" else
+    --            (op1 or op2) when cmd = "10" else
+    --            (op1 xor op2) when cmd = "11" else
+    --            res_add;
+    -- v <= res_add_cout xor res_add(31) when cmd = "00" else '0';
+    cout <= res_add_cout;
+    
+    z <= '1' when res_tmp = x"00000000" else '0';
+    n <= res_tmp(31);
 		res <= res_tmp;
-
-	end process;	
-end behavioral;
+end dataflow;

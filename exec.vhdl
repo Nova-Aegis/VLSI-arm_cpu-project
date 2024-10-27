@@ -76,7 +76,7 @@ end EXEC;
 
 ----------------------------------------------------------------------
 
-architecture Behavior OF EXEC is
+architecture Dataflow OF EXEC is
 
   component shifter
     port(
@@ -235,16 +235,23 @@ begin
   -- exe_res relay
   exe_res <= alu_res;
   -- exe_c calc
-  exe_c <= alu_c when (dec_alu_cmd = "00")
-           else shift_c;
+  exe_c <= (alu_c and (not dec_alu_cmd(0) and not dec_alu_cmd(1))) or
+           (shift_c and (dec_alu_cmd(0) or dec_alu_cmd(1)));
+-- exe_c <= alu_c when (dec_alu_cmd = "00") else shift_c; --- PREVIOUS VERSION
   -- dest & write back
   exe_dest <= dec_exe_dest;
-  exe_wb <= '0' when (( not mem_acces and not dec2exe_empty) or
-                      ( mem_acces and not dec2exe_empty and not exe2mem_full)) = '0'
-            else dec_exe_wb;
-  exe_flag_wb <= '0' when (( not mem_acces and not dec2exe_empty) or
-                           ( mem_acces and not dec2exe_empty and not exe2mem_full)) = '0'
-                 else dec_flag_wb;
+
+  exe_wb <= (not dec2exe_empty and (not mem_acces or (mem_acces and not exe2mem_full)))
+            and dec_exe_wb;
+  exe_flag_wb <= (not dec2exe_empty and (not mem_acces or (mem_acces and not exe2mem_full)))
+                 and dec_flag_wb;
+  
+  -- exe_wb <= (( not mem_acces and not dec2exe_empty) or
+  --            ( mem_acces and not dec2exe_empty and not exe2mem_full))
+  --           and dec_exe_wb;
+  -- exe_flag_wb <= (( not mem_acces and not dec2exe_empty) or
+  --                 ( mem_acces and not dec2exe_empty and not exe2mem_full))
+  --                and dec_flag_wb;
 
   --- MEM CALCULATION
   -- mem acess calc
@@ -260,9 +267,9 @@ begin
   --- MEM BUFFER HANDLING
   exe_push <= mem_acces and not exe2mem_full;
   
-  
   --- FETCH NEXT OPERATION
-  exe_pop <= ( not mem_acces and not dec2exe_empty) or
-             ( mem_acces and not dec2exe_empty and not exe2mem_full);
+  exe_pop <= not dec2exe_empty and (not mem_acces or (mem_acces and not exe2mem_full));
+  -- exe_pop <= ( not mem_acces and not dec2exe_empty) or
+  --            ( mem_acces and not dec2exe_empty and not exe2mem_full);
   
-end Behavior;
+end Dataflow;
