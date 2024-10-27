@@ -8,10 +8,13 @@ RUNFLAGS = -r
 OADDER32 = adder32.o
 OALU = alu.o $(OADDER32)
 OSHIFTER = shifter.o
-OEXEC = $(OALU) $(OSHIFTER) exec.o fifo_72b.o
+OFIFO = fifo_72b.o
+OEXEC = $(OALU) $(OSHIFTER) $(OFIFO) exec.o
+
+.PHONY : all exec adder32 alu shifter fifo run_fifo run_adder32 run_alu run_shifter run_exec clean
 
 # MOAB (Mother Of All Binaries)
-all: alu shifter exec adder32
+all: alu shifter exec adder32 fifo
 
 # Test Bench maker
 exec : $(OEXEC) exec_tb.o
@@ -26,21 +29,27 @@ alu: $(OALU) alu_tb.o
 shifter: $(OSHIFTER) shifter_tb.o
 	$(CC) $(TBFLAGS) shifter_tb
 
+fifo : $(OFIFO) fifo_72b_tb.o
+	$(CC) $(TBFLAGS) fifo_72b_tb
+
 # Object file maker
-%.o: %.vhdl
+%.o : %.vhdl
 	$(CC) $(CFLAGS) $<
 
 # Test Banch runner
-run_adder32: adder32
+run_adder32 : adder32
 	$(CC) $(RUNFLAGS) adder32_tb --vcd=adder32.vcd
 
-run_alu: alu
+run_alu : alu
 	$(CC) $(RUNFLAGS) alu_tb --vcd=alu.vcd
 
-run_shifter: shifter
+run_shifter : shifter
 	$(CC) $(RUNFLAGS) shifter_tb --vcd=shifter.vcd
 
-run_exec: exec
+run_fifo : fifo
+	$(CC) $(RUNFLAGS) fifo_72b_tb --vcd=fifo_72b.vcd
+
+run_exec : exec
 	$(CC) $(RUNFLAGS) exec_tb --vcd=exec.vcd
 
 
@@ -48,4 +57,4 @@ run_exec: exec
 clean:
 	-rm *.o *.vcd
 	-rm *~
-	-rm alu_tb adder32_tb shifter_tb exec_tb
+	-rm alu_tb adder32_tb shifter_tb exec_tb fifo_72b_tb
