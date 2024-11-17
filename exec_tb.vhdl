@@ -80,7 +80,7 @@ architecture sim of exec_tb is
 			vss				: in bit);
   end component;
 
-  constant period : time := 10 ms;
+  constant period : time := 100 ns;
 	signal valide : std_logic := '1';
   
 	signal dec2exe_empty : std_logic := '0';
@@ -169,6 +169,17 @@ begin
 			report "";
 		end if;
 	end process;
+
+	process(exe2mem_empty)
+	begin
+		if (exe2mem_empty = '0') then
+			report "exe2mem_empty : 0";
+		elsif (exe2mem_empty = '1') then
+			report "exe2mem_empty : 1";
+		else
+			report "exe2mem_empty : ???";
+		end if;
+	end process;
 	
 
 	process
@@ -178,7 +189,6 @@ begin
     assert false report "start of test" severity note;
 
     dec2exe_empty <= '0';
-    sw <= '0';
     wait until rising_edge(ck);
 		assert (exe2mem_empty = '1') report "Start fifo not empty" severity error;
     reset_n <= '1';
@@ -189,6 +199,7 @@ begin
     op2 <= x"00000001";
     dec_wb <= '1';
     alu_cmd <= "00";
+    sw <= '0';
     wait until rising_edge(ck);
 		assert (exe2mem_empty = '1') report "Start fifo not empty" severity error;
     assert (exe_res = x"00000000") report "Test Case 1 res Failed" severity error;
@@ -217,12 +228,13 @@ begin
 		assert false report "Test Case 2 complete" severity note;
     
     -- Test Case 3 mem buffer full
-    assert (exe_pop = '1') report "Test pop starts at 3 Failed" severity error;
+    assert (exe_pop = '0') report "Test pop starts at 3 Failed" severity error;
     sw <= '1';
     op1 <= x"00000010";
     op2 <= x"00000010";
     dec_wb <= '1';
     alu_cmd <= "00";
+		
 		mem_pop <= '1';
 
     wait until rising_edge(ck);

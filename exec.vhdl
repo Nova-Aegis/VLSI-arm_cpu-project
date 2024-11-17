@@ -235,7 +235,7 @@ begin
   -- exe_res relay
   exe_res <= alu_res;
   -- exe_c calc
-  exe_c <= (alu_c and (not dec_alu_cmd(0) and not dec_alu_cmd(1))) or
+  exe_c <= (alu_c and (dec_alu_cmd(0) nor dec_alu_cmd(1))) or
            (shift_c and (dec_alu_cmd(0) or dec_alu_cmd(1)));
 -- exe_c <= alu_c when (dec_alu_cmd = "00") else shift_c; --- PREVIOUS VERSION
   -- dest & write back
@@ -268,7 +268,9 @@ begin
   exe_push <= mem_acces and not exe2mem_full;
   
   --- FETCH NEXT OPERATION
-  exe_pop <= not dec2exe_empty and (not mem_acces or (mem_acces and not exe2mem_full));
+	exe_pop <= not dec2exe_empty and (not mem_acces or (not exe2mem_full and mem_pop));
+	
+  -- exe_pop <= not dec2exe_empty and (not mem_acces or (mem_acces and not exe2mem_full));
   -- exe_pop <= ( not mem_acces and not dec2exe_empty) or
   --            ( mem_acces and not dec2exe_empty and not exe2mem_full);
   
