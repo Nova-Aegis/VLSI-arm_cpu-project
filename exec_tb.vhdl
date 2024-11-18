@@ -170,18 +170,6 @@ begin
 		end if;
 	end process;
 
-	process(exe2mem_empty)
-	begin
-		if (exe2mem_empty = '0') then
-			report "exe2mem_empty : 0";
-		elsif (exe2mem_empty = '1') then
-			report "exe2mem_empty : 1";
-		else
-			report "exe2mem_empty : ???";
-		end if;
-	end process;
-	
-
 	process
 	begin
 		
@@ -190,6 +178,7 @@ begin
 
     dec2exe_empty <= '0';
     wait until rising_edge(ck);
+		wait for 10 ns;
 		assert (exe2mem_empty = '1') report "Start fifo not empty" severity error;
     reset_n <= '1';
 
@@ -200,6 +189,10 @@ begin
     dec_wb <= '1';
     alu_cmd <= "00";
     sw <= '0';
+		-- test pop avant fin de cycle
+		wait until falling_edge(ck);
+    assert (exe_pop = '1') report "Test pop after 1 Failed" severity error;
+		-- test sortie après fin de cycle
     wait until rising_edge(ck);
 		assert (exe2mem_empty = '1') report "Start fifo not empty" severity error;
     assert (exe_res = x"00000000") report "Test Case 1 res Failed" severity error;
@@ -211,14 +204,17 @@ begin
     assert false report "Test Case 1 complete" severity note;
     
     -- Test Case 2 mem
-    assert (exe_pop = '1') report "Test pop starts at 2 Failed" severity error;
-    sw <= '1';
     op1 <= x"00000001";
     op2 <= x"00000001";
     dec_wb <= '1';
     alu_cmd <= "00";
-
-    wait until rising_edge(ck);
+    sw <= '1';
+		-- test pop avant fin de cycle
+		wait until falling_edge(ck);
+		assert (exe_pop = '1') report "Test pop after 2 Failed" severity error;
+		-- test sorite après fin de cycle
+		wait until rising_edge(ck);
+		wait for 10 ns;
     assert (exe_res = x"00000002") report "Test Case 2 res Failed" severity error;
     assert (flag = "0000") report "Test Case 2 flag Failed" severity error;
     assert (exe_reg = "0100") report "Test Case 2 reg Failed" severity error;
@@ -228,19 +224,20 @@ begin
 		assert false report "Test Case 2 complete" severity note;
     
     -- Test Case 3 mem buffer full
-    assert (exe_pop = '0') report "Test pop starts at 3 Failed" severity error;
-    sw <= '1';
     op1 <= x"00000010";
     op2 <= x"00000010";
     dec_wb <= '1';
     alu_cmd <= "00";
+    sw <= '1';
 		
 		mem_pop <= '1';
 
-    wait until rising_edge(ck);
-		
-    assert (exe_pop = '0') report "Test case 3 pop Failed" severity error;
-    mem_pop <= '0';
+    -- test pop avant fin de cycle
+		wait until falling_edge(ck);
+		assert (exe_pop = '1') report "Test pop after 3 Failed" severity error;
+		-- test sorite après fin de cycle
+		wait until rising_edge(ck);
+		mem_pop <= '0';
     sw <= '0';
     assert (exe_res = x"00000020") report "Test Case 3 res Failed" severity error;
     assert (flag = "0000") report "Test Case 3 flag Failed" severity error;
@@ -252,14 +249,14 @@ begin
     assert (mem_data = x"22222222") report "Test Case 3 mem_data Failed" severity error;
     assert (mem_reg = "1000") report "Test Case 3 mem_reg Failed" severity error;
     assert (mem_acces = "0100") report "Test Case 3 mem_acces Failed" severity error;
-    assert (exe2mem_empty = '1') report "Test case 3 fifo empty Failed" severity error;
+    assert (exe2mem_empty = '0') report "Test case 3 fifo empty Failed" severity error;
     assert false report "Test Case 3 complte" severity note;
 
     -- Test Case 4 emptying buffer
     wait until rising_edge(ck);
     assert (exe_pop = '1') report "Test case 4 pop Failed" severity error;
-    assert (exe2mem_empty = '1') report "Test case 4 fifo empty Failed" severity error;
-    assert (mem_adr = x"00000002") report "Test Case 4 mem_adr Failed" severity error; 
+    assert (exe2mem_empty = '0') report "Test case 4 fifo empty Failed" severity error;
+    assert (mem_adr = x"00000020") report "Test Case 4 mem_adr Failed" severity error; 
     assert (mem_data = x"22222222") report "Test Case 4 mem_data Failed" severity error;
     assert (mem_reg = "1000") report "Test Case 4 mem_reg Failed" severity error;
     assert (mem_acces = "0100") report "Test Case 4 mem_acces Failed" severity error;
