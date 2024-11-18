@@ -241,10 +241,8 @@ begin
   -- dest & write back
   exe_dest <= dec_exe_dest;
 
-  exe_wb <= (not dec2exe_empty and (not mem_acces or (mem_acces and not exe2mem_full)))
-            and dec_exe_wb;
-  exe_flag_wb <= (not dec2exe_empty and (not mem_acces or (mem_acces and not exe2mem_full)))
-                 and dec_flag_wb;
+  exe_wb <= dec_exe_wb;
+  exe_flag_wb <= dec_flag_wb;
   
   -- exe_wb <= (( not mem_acces and not dec2exe_empty) or
   --            ( mem_acces and not dec2exe_empty and not exe2mem_full))
@@ -268,7 +266,7 @@ begin
   exe_push <= mem_acces and not exe2mem_full;
   
   --- FETCH NEXT OPERATION
-	exe_pop <= not dec2exe_empty and (not mem_acces or (not exe2mem_full and mem_pop));
+	exe_pop <= not dec2exe_empty and (not mem_acces or (exe2mem_full and mem_pop));
 	
   -- exe_pop <= not dec2exe_empty and (not mem_acces or (mem_acces and not exe2mem_full));
   -- exe_pop <= ( not mem_acces and not dec2exe_empty) or
