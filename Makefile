@@ -10,6 +10,8 @@ OALU = alu.o $(OADDER32)
 OSHIFTER = shifter.o
 OFIFO = fifo_72b.o
 OEXEC = $(OALU) $(OSHIFTER) $(OFIFO) exec.o
+OREG = reg.o
+ODECODE = $(OREG) $(OFIFO) decod.o
 
 .PHONY : all exec adder32 alu shifter fifo run_fifo run_adder32 run_alu run_shifter run_exec clean
 
@@ -31,6 +33,9 @@ shifter: $(OSHIFTER) shifter_tb.o
 
 fifo : $(OFIFO) fifo_72b_tb.o
 	$(CC) $(TBFLAGS) fifo_72b_tb
+
+decode : $(ODECODE)
+	
 
 # Object file maker
 %.o : %.vhdl
