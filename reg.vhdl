@@ -164,6 +164,9 @@ begin
 	reg_ovr <= flags(3);
 	reg_vv <= flags_valide(1);
 
+	--- Lecture PC
+	reg_pc <= regs(15);
+	reg_pcv <= regs_valide(15);
 	
 
 
