@@ -268,7 +268,8 @@ begin
   exe_push <= mem_acces and not exe2mem_full;
   
   --- FETCH NEXT OPERATION
-	exe_pop <= not dec2exe_empty and (not mem_acces or (not exe2mem_full or mem_pop));
+	exe_pop <= not mem_acces or (not exe2mem_full or mem_pop);
+	-- exe_pop <= not dec2exe_empty and (not mem_acces or (not exe2mem_full or mem_pop));
   -- exe_pop <= not dec2exe_empty and (not mem_acces or (mem_acces and not exe2mem_full));
   -- exe_pop <= ( not mem_acces and not dec2exe_empty) or
   --            ( mem_acces and not dec2exe_empty and not exe2mem_full);

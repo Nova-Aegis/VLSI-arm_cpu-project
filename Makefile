@@ -11,12 +11,14 @@ OSHIFTER = shifter.o
 OFIFO = fifo_72b.o
 OEXEC = $(OALU) $(OSHIFTER) $(OFIFO) exec.o
 OREG = reg.o
-ODECODE = $(OREG) $(OFIFO) decod.o
+ODECODE = $(OREG) $(OFIFO) decod.o fifo_32b.o fifo_127b.o
+OARM = $(ODECODE) $(OEXEC) ifetch.o mem.o
 
-.PHONY : all exec adder32 alu shifter fifo run_fifo run_adder32 run_alu run_shifter run_exec clean
+
+.PHONY : all exec adder32 alu shifter fifo arm run_fifo run_adder32 run_alu run_shifter run_exec run_arm clean
 
 # MOAB (Mother Of All Binaries)
-all: alu shifter exec adder32 fifo
+all: alu shifter exec adder32 fifo arm
 
 # Test Bench maker
 exec : $(OEXEC) exec_tb.o
@@ -35,7 +37,9 @@ fifo : $(OFIFO) fifo_72b_tb.o
 	$(CC) $(TBFLAGS) fifo_72b_tb
 
 decode : $(ODECODE)
-	
+
+arm : $(OARM) arm_tb.o
+	$(CC) $(TBFLAGS) arm_tb
 
 # Object file maker
 %.o : %.vhdl
@@ -57,9 +61,12 @@ run_fifo : fifo
 run_exec : exec
 	$(CC) $(RUNFLAGS) exec_tb --vcd=exec.vcd
 
+run_arm : arm
+	$(CC) $(RUNFLAGS) arm_tb --vcd=arm.vcd
+
 
 # The Janitor
 clean:
 	-rm *.o *.vcd
 	-rm *~
-	-rm alu_tb adder32_tb shifter_tb exec_tb fifo_72b_tb
+	-rm alu_tb adder32_tb shifter_tb exec_tb fifo_72b_tb arm_tb
