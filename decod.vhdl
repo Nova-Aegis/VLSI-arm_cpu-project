@@ -620,26 +620,30 @@ begin
 									 if_ir(19 downto 16) when trans_t = '1' or mtrans_t = '1' or mult_t = '1' else
 									 if_ir(15 downto 12);
 
-	inval_exe <= '1' when branch_t = '1' or 
-							 					(regop_t = '1' and tst_i = '0' and teq_i = '0' and cmp_i = '0' and cmn_i = '0') or
-							 					((trans_t = '1' or mtrans_t = '1') and if_ir(21) = '1') or
-							 					mult_t = '1' else
+	inval_exe <= '0' when dec2exe_push = '0' else
+							 '1' when branch_t = '1' or 
+							 (regop_t = '1' and tst_i = '0' and teq_i = '0' and cmp_i = '0' and cmn_i = '0') or
+							 ((trans_t = '1' or mtrans_t = '1') and if_ir(21) = '1') or
+							 mult_t = '1' else
 							 '0';
 
 	inval_mem_adr <=	if_ir(15 downto 12) when trans_t = '1' else
 										mtrans_rd;
 
-	inval_mem <=	'1'	when trans_t = '1' or mtrans_t = '1' else
+	inval_mem <=	'0' when dec2exe_push = '0' else
+								'1'	when trans_t = '1' or mtrans_t = '1' else
 								'0';
 
-	inval_czn <= if_ir(20) when regop_t = '1' or mult_t = '1' else
+	inval_czn <= '0' when dec2exe_push = '0' else
+							 if_ir(20) when regop_t = '1' or mult_t = '1' else
 							 '0';
-			
+	
 
-	inval_ovr <= if_ir(20) when mult_t = '1' or
-							 								(regop_t = '1' and and_i = '0' and eor_i = '0' and
-															tst_i = '0' and teq_i = '0' and orr_i = '0' and 
-															mov_i = '0'	and bic_i = '0' and mvn_i = '0') else
+	inval_ovr <= '0' when dec2exe_push = '0' else
+							 if_ir(20) when mult_t = '1' or
+							 (regop_t = '1' and and_i = '0' and eor_i = '0' and
+								tst_i = '0' and teq_i = '0' and orr_i = '0' and 
+								mov_i = '0'	and bic_i = '0' and mvn_i = '0') else
 							 '0';
 
 -- operand validite
@@ -680,8 +684,9 @@ begin
 
 -- Shifter command
 
-	shift_lsl <= '0' when (((regop_t = '1' and if_ir(25) = '0') or
-													(trans_t = '1' and if_ir(25) = '1')) and if_ir(6 downto 5) /= "00") else
+	shift_lsl <= '0' when ((((regop_t = '1' and if_ir(25) = '0') or
+													(trans_t = '1' and if_ir(25) = '1')) and if_ir(6 downto 5) /= "00") or
+												 (regop_t = '1' and if_ir(25) = '1')) else
 							 '1';
 
 	shift_lsr <= '1' when (((regop_t = '1' and if_ir(25) = '0') or

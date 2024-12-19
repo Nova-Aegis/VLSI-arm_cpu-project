@@ -607,6 +607,80 @@ begin
 	ic_inst <= "1110" & "000" & "1111"  & "0" & "0000" & "0010" & "00000000" & "0001";
 	report "pushed third instr";
 	-- waiting for 0xFFFF FFF7
+
+	---- TEST AND COMPARISONS
+	--- ADD r0, r3, 0x08
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "001" & "0100" & "1" & "0000" & "0011" & "0000" & "00001000";
+	report "pushed second instr";
+	
+	--- MOV r4, 0x0F
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "001" & "1101" & "0" & "0000" & "0100" & "0000" & "00001111";
+	report "pushed first instr";
+
+	--- ADD r5, 0x0F
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "001" & "1101" & "0" & "0000" & "0101" & "0001" & "00001111";
+	report "pushed second instr";
+	
+	--- TST [r8], r4, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1000"  & "1" & "0100" & "1000" & "00000000" & "0100";
+	report "pushed third instr";
+	-- waiting no register write (0x0F) vnzc = "0000"
+	--- TST [r8], r4, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1000"  & "1" & "0100" & "1000" & "00000000" & "0101";
+	report "pushed third instr";
+	-- waiting no register write (0x03) vnzc = "0000"
+	--- TST [r8], r5, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1000"  & "1" & "0101" & "1000" & "00000000" & "0101";
+	report "pushed third instr";
+	-- waiting no register write (0x0F) vnzc = "0100"
+	
+	--- TEQ [r8], r4, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1001"  & "1" & "0100" & "1000" & "00000000" & "0100";
+	report "pushed third instr";
+	-- waiting no register write (0x00) vnzc = "0010"
+	--- TEQ [r8], r4, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1001"  & "1" & "0100" & "1000" & "00000000" & "0101";
+	report "pushed third instr";
+	-- waiting no register write (0xC000 000C) vnzc = "0100"
+	
+	--- CMP [r8], r4, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1010"  & "1" & "0100" & "1000" & "00000000" & "0100";
+	report "pushed third instr";
+	-- waiting no register write (0x00) vnzc = "1011"
+	--- CMP [r8], r4, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1010"  & "1" & "0100" & "1000" & "00000000" & "0101";
+	report "pushed third instr";
+	-- waiting no register write (0x00) vnzc = "0000"
+	--- CMP [r8], r5, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1010"  & "1" & "0101" & "1000" & "00000000" & "0100";
+	report "pushed third instr";
+	-- waiting no register write (0x00) vnzc = "0101"
+	
+	--- CMN [r8], r4, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1011"  & "1" & "0100" & "1000" & "00000000" & "0100";
+	report "pushed third instr";
+	-- waiting no register write (0x08) vnzc = "0000"
+	--- CMN [r8], r4, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1011"  & "1" & "0100" & "1000" & "00000000" & "0101";
+	report "pushed third instr";
+	-- waiting no register write (0x08) vnzc = "1100"
+
+
+	
+
 	
 	wait until rising_edge(ck);
 	wait until rising_edge(ck);

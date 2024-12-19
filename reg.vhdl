@@ -379,7 +379,7 @@ begin
 				flags(2) <= wneg;
 				flags_valide(0) <= '1';
 			end if;
-			if flags_valide(1) = '1' and cspr_wb = '1' then
+			if flags_valide(1) = '0' and cspr_wb = '1' then
 				flags(3) <= wovr;
 				flags_valide(1) <= '1';
 			end if;
