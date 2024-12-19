@@ -834,6 +834,7 @@ begin
 	case cur_state is
 		--- FETCH state
 		when FETCH =>
+			report "switched to FETCH";
 			debug_state <= X"1";
 			if2dec_pop <= '0';
 			dec2exe_push <= '0';
@@ -854,6 +855,7 @@ begin
 			
 	-- 		if (if2dec_empty = '1' or dec2exe_full = '1' or condv = '0') and dec2if_full = '0'
 
+			
 			-- end if;
 			if (if2dec_empty = '1' and if2dec_pop = '0') then
 				report "if2dec_empty";
@@ -863,11 +865,15 @@ begin
 					inc_pc <= '0';
 				end if;
 				dec2exe_push <= '0';
-			elsif (if2dec_pop = '0') then
-				report "if2dec_pop";
-				if2dec_pop <= '1';
 			else
-				if (condv = '0' or operv = '0') then
+				if (condv = '0' or operv = '0' or (dec2exe_full = '1' and exe_pop = '0')) then
+					if (condv = '0') then
+						report "condv = '0'";
+					elsif operv = '0' then
+						report "operv = '0'";
+					else
+						report "dec2exe_full and not exe_pop";
+					end if;
 					report "not condv or not operv";
 					dec2exe_push <= '0';
 					if2dec_pop <= '0';
@@ -878,6 +884,7 @@ begin
 					inc_pc <= '1';
 				else
 					if (branch_t = '1') then -- branch
+						report "branch";
 						dec2exe_push <= '1'; -- push branch and flush instruction buffer
 						inc_pc <= '0';
 						if2dec_pop <= '0';
@@ -912,31 +919,40 @@ begin
 						inc_pc <= '1';
 						if2dec_pop <= '1';
 						next_state <= RUN;
+					else
+						report "RUN error";
 					end if;
 				end if;
-
-				--- do not increment if fifo full
-				if (dec2if_full = '1') then
-					inc_pc <= '0';
-					dec2if_push <= '0';
-				else
-					dec2if_push <= '1';
-				end if;
-
-				--- do not push pc if pc is invalid
-				if (reg_pcv = '0') then
-					dec2if_push <= '0';
-				end if;
 			end if;
-				
+
+			
+			if (if2dec_pop = '0') then
+				report "if2dec_pop";
+				if2dec_pop <= '1';
+			end if;	
+
+			--- do not increment if fifo full
+			if (dec2if_full = '1') then
+				inc_pc <= '0';
+				dec2if_push <= '0';
+			else
+				dec2if_push <= '1';
+			end if;
+
+			--- do not push pc if pc is invalid
+			if (reg_pcv = '0') then
+				dec2if_push <= '0';
+			end if;
 
 
 --- MTRANS state
 		when MTRANS =>
+			report "switched to MTRANS";
 			--???
 
 		--- BRANCH state
 		when BRANCH =>
+			report "switched to BRANCH";
 			dec2exe_push <= '0';
 			if (if2dec_empty = '0') then
 				next_state <= RUN;
@@ -945,6 +961,7 @@ begin
 
 		--- LINK state
 		when LINK =>
+			report "switched to LINK";
 			-- push pc to stack and increment stack
 			--op1 <= reg_pc;
 			--op2 <= x"00000004";

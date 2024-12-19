@@ -351,12 +351,6 @@ begin
 			flags <= "0000";
 			flags_valide <= "11";
 		elsif rising_edge(ck) then
-			--- Invalidation des ports
-			w_regv(inval_adr1, inval1, regs_valide, true);
-			w_regv(inval_adr2, inval2, regs_valide, true);
-			flags_valide(0) <= not inval_czn;
-			flags_valide(1) <= not inval_ovr;
-
 			--- PC
 			if regs_valide(15) = '0' then
 				if wen1 = '1' and wadr1 = "1111" then
@@ -389,6 +383,13 @@ begin
 				flags(3) <= wovr;
 				flags_valide(1) <= '1';
 			end if;
+
+			
+			--- Invalidation des ports
+			w_regv(inval_adr1, inval1, regs_valide, true);
+			w_regv(inval_adr2, inval2, regs_valide, true);
+			flags_valide(0) <= not inval_czn;
+			flags_valide(1) <= not inval_ovr;
 						
 			
 		end if;

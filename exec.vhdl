@@ -176,7 +176,7 @@ begin
 
   alu_inst : alu
     port map (
-      op1       => op1,
+      op1 => op1,
       op2	=> op2,
       cin	=> dec_alu_cy,
 
@@ -230,7 +230,7 @@ begin
   op2 <= op2_shift when (dec_comp_op2 = '0')
          else (not op2_shift);
   -- op1 calc
-  op1 <= dec_op1 when (dec_comp_op2 = '0')
+  op1 <= dec_op1 when (dec_comp_op1 = '0')
          else (not dec_op1);
 
   --- EXE -> DEC

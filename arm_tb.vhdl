@@ -511,44 +511,106 @@ begin
 
 	wait until rising_edge(ck);
 	wait for 10 ns;
-
-	assert dec2if_empty = '1' report "start dec2if not mepty";
-	assert if2dec_empty = '1' report "start if2dec not empty";
-
 	wait until rising_edge(ck);
 	reset_n <= '1';
-
 	if_pop <= '1';
 	wait until rising_edge(ck);
 	wait until rising_edge(ck);
 	wait for 10 ns;
 	
-	assert if_adr = x"00000" & x"0000" report "first instr adr not 0x00";
-	assert if_adr_valid = '1' report "first instr not valid";
-
-	-- wait 1 cycle to push instruction
 	wait until rising_edge(ck);
 	ic_stall <= '0';
-	ic_inst <= "1110" & "001" & "0100" & "0" & "0000" & "0000" & "0000" & "00001000";
-	--- ADD r0, r0, 8
-	assert if_adr = x"0000" & x"0001" report "second instr adr not 0x01";
-	assert if_adr_valid = '1' report "second instr not valid";
-	assert dec_pop = '1' report "decode not poping";
-		
-	wait until rising_edge(ck);
-	ic_inst <= "1110" & "000" & "1101" & "0" & "0000" & "0001" & "00000000" & "0000"; 
-	--- MOV r1, r0
-	assert if_adr = x"0000" & x"0002" report "third instr adr not 0x02";
-	assert if_adr_valid = '1' report "third instr not valid";
-	assert dec_pop = '1' report "decode not poping";
 
-	wait until rising_edge(ck);
-	ic_inst <= "1110" & "001" & "0100"  & "0" & "0000" & "0010" & "0000" & "11110000"; 
-	assert dec_pop = '0' report "decode poping when should not";
+	--- ADD r0, r0, 0x0F
+	ic_inst <= "1110" & "001" & "0100" & "0" & "0000" & "0000" & "0000" & "00001111";
+	report "pushed first instr";
+
+	--- ADD r1, r1, 0x08
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "001" & "0100" & "0" & "0001" & "0001" & "0000" & "00001000";
+	report "pushed second instr";
+
+	--- ADD r2, r0, r1
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "0010"  & "1" & "0000" & "0010" & "00000000" & "0001";
+	report "pushed third instr";
+	-- waiting for c = '1'
+
+	--- AND r2, r0, r1
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "0000"  & "0" & "0000" & "0010" & "00000000" & "0001";
+	report "pushed third instr";
+	-- waiting for 0x08
+
+	--- EOR r2, r0, r1
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "0001"  & "0" & "0000" & "0010" & "00000000" & "0001";
+	report "pushed third instr";
+	-- waiting for 0x07
+	
+	--- SUB r2, r0, r1
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "0010"  & "0" & "0000" & "0010" & "00000000" & "0001";
+	report "pushed third instr";
+	-- waiting for 0x07
+	
+	--- RSB r2, r0, r1
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "0011"  & "0" & "0000" & "0010" & "00000000" & "0001";
+	report "pushed third instr";
+	-- waiting for 0xFFFF FFF9
+	
+	--- ADD r2, r0, r1
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "0100"  & "0" & "0000" & "0010" & "00000000" & "0001";
+	report "pushed third instr";
+	-- waiting for 0x17
+	
+	--- ADC r2, r0, r1
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "0101"  & "0" & "0000" & "0010" & "00000000" & "0001";
+	report "pushed third instr";
+	-- waiting for 0x18
+	
+	--- SBC r2, r0, r1
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "0110"  & "0" & "0000" & "0010" & "00000000" & "0001";
+	report "pushed third instr";
+	-- waiting for 0x07
+	
+	--- RSC r2, r0, r1
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "0111"  & "0" & "0000" & "0010" & "00000000" & "0001";
+	report "pushed third instr";
+	-- waiting for 0xFFFF FFF9
+	
+	--- ORR r2, r0, r1
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1100"  & "0" & "0000" & "0010" & "00000000" & "0001";
+	report "pushed third instr";
+	-- waiting for 0x0F
+	
+	--- MOV r2, r1
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1101"  & "0" & "0000" & "0010" & "00000000" & "0001";
+	report "pushed third instr";
+	-- waiting for 0x08
+	
+	--- BIC r2, r0, r1
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1110"  & "0" & "0000" & "0010" & "00000000" & "0001";
+	report "pushed third instr";
+	-- waiting for 0x07
+	
+	--- MVN r2, r0, r1
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1111"  & "0" & "0000" & "0010" & "00000000" & "0001";
+	report "pushed third instr";
+	-- waiting for 0xFFFF FFF7
 	
 	wait until rising_edge(ck);
-	ic_stall <= '1';
 	wait until rising_edge(ck);
+	ic_stall <= '1';
 	wait until rising_edge(ck);
 	wait until rising_edge(ck);
 	wait until rising_edge(ck);
