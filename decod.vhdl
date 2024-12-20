@@ -886,6 +886,7 @@ begin
 				elsif (cond = '0') then
 					report "not cond";
 					dec2exe_push <= '0';
+					if2dec_pop <= '1';
 					inc_pc <= '1';
 				else
 					if (branch_t = '1') then -- branch
@@ -929,13 +930,7 @@ begin
 					end if;
 				end if;
 			end if;
-
 			
-			if (if2dec_pop = '0') then
-				report "if2dec_pop";
-				if2dec_pop <= '1';
-			end if;	
-
 			--- do not increment if fifo full
 			if (dec2if_full = '1') then
 				inc_pc <= '0';

@@ -521,164 +521,306 @@ begin
 	wait until rising_edge(ck);
 	ic_stall <= '0';
 
+	--- REGULAR INSTRUCTIONS
+	report "REGULAR INSTRUCTIONS";
 	--- ADD r0, r0, 0x0F
 	ic_inst <= "1110" & "001" & "0100" & "0" & "0000" & "0000" & "0000" & "00001111";
-	report "pushed first instr";
 
 	--- ADD r1, r1, 0x08
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "001" & "0100" & "0" & "0001" & "0001" & "0000" & "00001000";
-	report "pushed second instr";
 
 	--- ADD r2, r0, r1
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "0010"  & "1" & "0000" & "0010" & "00000000" & "0001";
-	report "pushed third instr";
 	-- waiting for c = '1'
 
 	--- AND r2, r0, r1
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "0000"  & "0" & "0000" & "0010" & "00000000" & "0001";
-	report "pushed third instr";
 	-- waiting for 0x08
 
 	--- EOR r2, r0, r1
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "0001"  & "0" & "0000" & "0010" & "00000000" & "0001";
-	report "pushed third instr";
 	-- waiting for 0x07
 	
 	--- SUB r2, r0, r1
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "0010"  & "0" & "0000" & "0010" & "00000000" & "0001";
-	report "pushed third instr";
 	-- waiting for 0x07
 	
 	--- RSB r2, r0, r1
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "0011"  & "0" & "0000" & "0010" & "00000000" & "0001";
-	report "pushed third instr";
 	-- waiting for 0xFFFF FFF9
 	
 	--- ADD r2, r0, r1
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "0100"  & "0" & "0000" & "0010" & "00000000" & "0001";
-	report "pushed third instr";
 	-- waiting for 0x17
 	
 	--- ADC r2, r0, r1
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "0101"  & "0" & "0000" & "0010" & "00000000" & "0001";
-	report "pushed third instr";
 	-- waiting for 0x18
 	
 	--- SBC r2, r0, r1
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "0110"  & "0" & "0000" & "0010" & "00000000" & "0001";
-	report "pushed third instr";
 	-- waiting for 0x07
 	
 	--- RSC r2, r0, r1
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "0111"  & "0" & "0000" & "0010" & "00000000" & "0001";
-	report "pushed third instr";
 	-- waiting for 0xFFFF FFF9
 	
 	--- ORR r2, r0, r1
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "1100"  & "0" & "0000" & "0010" & "00000000" & "0001";
-	report "pushed third instr";
 	-- waiting for 0x0F
 	
 	--- MOV r2, r1
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "1101"  & "0" & "0000" & "0010" & "00000000" & "0001";
-	report "pushed third instr";
 	-- waiting for 0x08
 	
 	--- BIC r2, r0, r1
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "1110"  & "0" & "0000" & "0010" & "00000000" & "0001";
-	report "pushed third instr";
 	-- waiting for 0x07
 	
 	--- MVN r2, r0, r1
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "1111"  & "0" & "0000" & "0010" & "00000000" & "0001";
-	report "pushed third instr";
 	-- waiting for 0xFFFF FFF7
 
+
+	report "TEST and COMPARISONS";
 	---- TEST AND COMPARISONS
 	--- ADD r0, r3, 0x08
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "001" & "0100" & "1" & "0000" & "0011" & "0000" & "00001000";
-	report "pushed second instr";
 	
 	--- MOV r4, 0x0F
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "001" & "1101" & "0" & "0000" & "0100" & "0000" & "00001111";
-	report "pushed first instr";
 
 	--- ADD r5, 0x0F
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "001" & "1101" & "0" & "0000" & "0101" & "0001" & "00001111";
-	report "pushed second instr";
 	
 	--- TST [r8], r4, r4
 	wait until rising_edge(ck) and dec_pop = '1';
-	ic_inst <= "1110" & "000" & "1000"  & "1" & "0100" & "1000" & "00000000" & "0100";
-	report "pushed third instr";
+	ic_inst <= "1110" & "000" & "1000" & "1" & "0100" & "1000" & "00000000" & "0100";
 	-- waiting no register write (0x0F) vnzc = "0000"
 	--- TST [r8], r4, r5
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "1000"  & "1" & "0100" & "1000" & "00000000" & "0101";
-	report "pushed third instr";
 	-- waiting no register write (0x03) vnzc = "0000"
 	--- TST [r8], r5, r5
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "1000"  & "1" & "0101" & "1000" & "00000000" & "0101";
-	report "pushed third instr";
 	-- waiting no register write (0x0F) vnzc = "0100"
 	
 	--- TEQ [r8], r4, r4
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "1001"  & "1" & "0100" & "1000" & "00000000" & "0100";
-	report "pushed third instr";
 	-- waiting no register write (0x00) vnzc = "0010"
 	--- TEQ [r8], r4, r5
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "1001"  & "1" & "0100" & "1000" & "00000000" & "0101";
-	report "pushed third instr";
 	-- waiting no register write (0xC000 000C) vnzc = "0100"
 	
 	--- CMP [r8], r4, r4
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "1010"  & "1" & "0100" & "1000" & "00000000" & "0100";
-	report "pushed third instr";
 	-- waiting no register write (0x00) vnzc = "1011"
 	--- CMP [r8], r4, r5
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "1010"  & "1" & "0100" & "1000" & "00000000" & "0101";
-	report "pushed third instr";
 	-- waiting no register write (0x00) vnzc = "0000"
 	--- CMP [r8], r5, r4
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "1010"  & "1" & "0101" & "1000" & "00000000" & "0100";
-	report "pushed third instr";
 	-- waiting no register write (0x00) vnzc = "0101"
 	
 	--- CMN [r8], r4, r4
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "1011"  & "1" & "0100" & "1000" & "00000000" & "0100";
-	report "pushed third instr";
 	-- waiting no register write (0x08) vnzc = "0000"
 	--- CMN [r8], r4, r5
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "1011"  & "1" & "0100" & "1000" & "00000000" & "0101";
-	report "pushed third instr";
 	-- waiting no register write (0x08) vnzc = "1100"
 
 
+	report "CONDITIONS";
+	
+	--- Conditions
+	--- MOV r4, 0x08
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "001" & "1101" & "0" & "0000" & "0100" & "0000" & "00001111";
+	--- MOV r5, 0x08
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "001" & "1101" & "0" & "0000" & "0101" & "0000" & "11110000";
+
+	
+	--- Setting z = 1
+	--- TEQ r4, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1001" & "1" & "0100" & "0100" & "00000000" & "0100";
+	--- MOV EQ r6, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "0000" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
+	--- MOV NE r6, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "0001" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
+
+	--- Setting z = 0
+	--- TEQ r4, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1001" & "1" & "0100" & "0100" & "00000000" & "0101";
+	--- MOV NE r6, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "0001" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
+	--- MOV EQ r6, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "0000" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
+
+
+	--- Setting C = 1
+	--- CMP r4, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1010" & "1" & "0100" & "0100" & "00000000" & "0100";
+	--- MOV HS r6, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "0010" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
+	--- MOV LO r6, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "0011" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
+
+	--- Setting C = 0
+	--- TEQ r4, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1001" & "1" & "0100" & "0100" & "00000000" & "0101";
+	--- MOV LO r6, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "0011" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
+	--- MOV HS r6, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "0010" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
+
+	--- Setting N = 1
+	--- MOV r0, 0xFF00 0000
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "001" & "1101" & "1" & "0000" & "0000" & "0100" & "11111111";
+	--- MOV MI r6, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "0100" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
+	--- MOV PL r6, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "0101" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
+	
+	--- Setting N = 0
+	--- MOV r0, 0x0000 0000
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "001" & "1101" & "1" & "0000" & "0000" & "0000" & "00000000";
+	--- MOV PL r6, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "0101" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
+	--- MOV MI r6, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "0100" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
+
+	--- Setting V = 1
+	--- CMP r4, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1010" & "1" & "0100" & "0000" & "00000000" & "0100";
+	--- MOV VS r6, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "0110" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
+	--- MOV VC r6, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "0111" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
+	
+	--- Setting V = 0
+	--- CMP r5, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1011" & "1" & "0100" & "0000" & "00000000" & "0101";
+	--- MOV VC r6, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "0111" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
+	--- MOV VS r6, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "0110" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
+
+	--- Setting C = 1 & Z = 0
+	--- CMP r4, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "000" & "1010" & "1" & "0101" & "0000" & "00000000" & "0100";
+	--- MOV LS r6, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1000" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
+	--- MOV GE r6, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1001" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
+	
+	--- Setting C = 0 & Z = 1
+	--- MOV r0, 0x0000 0000
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "001" & "1101" & "1" & "0000" & "0000" & "0000" & "00000000";
+	--- MOV GE r6, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1001" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
+	--- MOV LS r6, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1000" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
+
+	--- Setting N = V = 1
+	--- CMP r4, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "001" & "1010" & "1" & "0100" & "0000" & "00000000" & "0101";
+	--- MOV LT r6, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1010" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
+	--- MOV GT r6, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1011" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
+	
+	--- Setting N = 1 V = 0
+	--- MOV r0, 0x0000 0000
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "001" & "1101" & "1" & "0000" & "0000" & "0001" & "00000011";
+	--- MOV GT r6, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1011" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
+	--- MOV LS r6, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1010" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
+
+	--- Setting Z = 0 && N = V = 1
+	--- CMP r4, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "001" & "1010" & "1" & "0100" & "0000" & "00000000" & "0101";
+	--- MOV LT r6, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1100" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
+	--- MOV GT r6, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1101" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
+	
+	--- Setting Z = 1 || N = 1 V = 0
+	--- MOV r0, 0x0000 0000
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "001" & "1101" & "1" & "0000" & "0000" & "0001" & "00000011";
+	--- MOV GT r6, r5
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1101" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
+	--- MOV LS r6, r4
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1100" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
+	
 	
 
 	
