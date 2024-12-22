@@ -386,10 +386,18 @@ begin
 
 			
 			--- Invalidation des ports
-			w_regv(inval_adr1, inval1, regs_valide, true);
-			w_regv(inval_adr2, inval2, regs_valide, true);
-			flags_valide(0) <= not inval_czn;
-			flags_valide(1) <= not inval_ovr;
+			if (inval1 = '1') then
+				w_regv(inval_adr1, inval1, regs_valide, true);
+			end if;
+			if (inval2 = '1') then
+				w_regv(inval_adr2, inval2, regs_valide, true);
+			end if;
+			if (inval_czn = '1') then
+				flags_valide(0) <= not inval_czn;
+			end if;
+			if (inval_ovr = '1') then
+				flags_valide(1) <= not inval_ovr;
+			end if;
 						
 			
 		end if;

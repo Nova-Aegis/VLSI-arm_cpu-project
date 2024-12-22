@@ -299,6 +299,94 @@ architecture sim OF arm_tb is
 	constant period : time := 50 ms;
 	signal valid : std_logic := '1';
 
+	--- TESTING VARAIBLES ---
+	
+
+	function test_instr(constant i : integer;
+											constant a_cmd : std_logic_vector(1 downto 0);
+											constant s_cmd : std_logic_vector(4 downto 0);
+											constant s_val : std_logic_vector(4 downto 0);
+											constant a_cy : std_logic;
+											constant comp : std_logic_vector(1 downto 0);
+											constant op1, op2, res : std_logic_vector(31 downto 0);
+											constant dst : std_logic_vector(3 downto 0);
+											constant wb : std_logic_vector(1 downto 0);
+											constant cvnz : std_logic_vector(3 downto 0)
+											) return integer is
+	begin
+		assert dec_alu_cmd = a_cmd
+			report "instruction " & integer'image(i) & " alu_cmd error" severity error;
+		assert
+			dec_shift_lsl = s_cmd(4) and
+			dec_shift_lsr = s_cmd(3) and
+			dec_shift_asr = s_cmd(2) and
+			dec_shift_ror = s_cmd(1) and
+			dec_shift_rrx = s_cmd(0)
+			report "instruction " & integer'image(i) & " shift_cmd error" severity error;
+		assert dec_shift_val = s_val
+			report "instruction " & integer'image(i) & " shift_val error" severity error;
+		assert dec_alu_cy = a_cy
+			report "instruction " & integer'image(i) & " alu_cy error" severity error;
+		assert
+			dec_comp_op1 = comp(1) and
+			dec_comp_op2 = comp(0)
+			report "instruction " & integer'image(i) & " comp op1 or op2 error" severity error;
+		assert dec_op1 = op1
+			report "instruction " & integer'image(i) & " op1 error" severity error;
+		assert dec_op2 = op2
+			report "instruction " & integer'image(i) & " op2 error" severity error;
+		assert exe_res = res
+			report "instruction " & integer'image(i) & " res error" severity error;
+		assert exe_dest = dst
+			report "instruction " & integer'image(i) & " res_adr error" severity error;
+		assert exe_wb = wb(1)
+			report "instruction " & integer'image(i) & " wb error" severity error;
+		assert dec_flag_wb = wb(0)
+			report "instruction " & integer'image(i) & " flag_wb error" severity error;
+		assert
+			exe_c = cvnz(3) and
+			exe_v = cvnz(2) and
+			exe_n = cvnz(1) and
+			exe_z = cvnz(0)
+			report "instruction " & integer'image(i) & " flag error" severity error;
+		return i + 1;
+	end function;
+
+	function test_instr_previous(constant i : integer;
+															 constant a_cmd : std_logic_vector(1 downto 0);
+															 constant s_cmd : std_logic_vector(4 downto 0);
+															 constant s_val : std_logic_vector(4 downto 0);
+															 constant a_cy : std_logic;
+															 constant comp : std_logic_vector(1 downto 0);
+															 constant op1, op2, res : std_logic_vector(31 downto 0);
+															 constant dst : std_logic_vector(3 downto 0);
+															 constant wb : std_logic_vector(1 downto 0);
+															 constant cvnz : std_logic_vector(3 downto 0)
+															 ) return integer is
+	begin
+		assert dec_alu_cmd = a_cmd and
+			dec_shift_lsl = s_cmd(4) and
+			dec_shift_lsr = s_cmd(3) and
+			dec_shift_asr = s_cmd(2) and
+			dec_shift_ror = s_cmd(1) and
+			dec_shift_rrx = s_cmd(0) and
+			dec_shift_val = s_val and
+			dec_alu_cy = a_cy and
+			dec_comp_op1 = comp(1) and
+			dec_comp_op2 = comp(0) and
+			dec_op1 = op1 and
+			dec_op2 = op2 and
+			exe_res = res and
+			exe_dest = dst and
+			exe_wb = wb(1) and
+			dec_flag_wb = wb(0) and
+			exe_c = cvnz(3) and
+			exe_v = cvnz(2) and
+			exe_n = cvnz(1) and
+			exe_z = cvnz(0) 
+			report "instruction " & integer'image(i) & " inval test error" severity error;
+		return i + 1;
+	end function;
 
 	
 begin
@@ -513,13 +601,8 @@ begin
 	wait for 10 ns;
 	wait until rising_edge(ck);
 	reset_n <= '1';
-	if_pop <= '1';
-	wait until rising_edge(ck);
-	wait until rising_edge(ck);
-	wait for 10 ns;
-	
-	wait until rising_edge(ck);
 	ic_stall <= '0';
+	wait until rising_edge(ck);
 
 	--- REGULAR INSTRUCTIONS
 	report "REGULAR INSTRUCTIONS";
@@ -527,13 +610,13 @@ begin
 	ic_inst <= "1110" & "001" & "0100" & "0" & "0000" & "0000" & "0000" & "00001111";
 
 	--- ADD r1, r1, 0x08
-	wait until rising_edge(ck) and dec_pop = '1';
+	wait until rising_edge(ck);
 	ic_inst <= "1110" & "001" & "0100" & "0" & "0001" & "0001" & "0000" & "00001000";
 
-	--- ADD r2, r0, r1
+	--- SUB r2, r0, r1
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "0010"  & "1" & "0000" & "0010" & "00000000" & "0001";
-	-- waiting for c = '1'
+	-- waiting for c = '0'
 
 	--- AND r2, r0, r1
 	wait until rising_edge(ck) and dec_pop = '1';
@@ -598,15 +681,11 @@ begin
 
 	report "TEST and COMPARISONS";
 	---- TEST AND COMPARISONS
-	--- ADD r0, r3, 0x08
-	wait until rising_edge(ck) and dec_pop = '1';
-	ic_inst <= "1110" & "001" & "0100" & "1" & "0000" & "0011" & "0000" & "00001000";
-	
 	--- MOV r4, 0x0F
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "001" & "1101" & "0" & "0000" & "0100" & "0000" & "00001111";
 
-	--- ADD r5, 0x0F
+	--- MOV r5, 0x0F
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "001" & "1101" & "0" & "0000" & "0101" & "0001" & "00001111";
 	
@@ -642,7 +721,7 @@ begin
 	-- waiting no register write (0x00) vnzc = "0000"
 	--- CMP [r8], r5, r4
 	wait until rising_edge(ck) and dec_pop = '1';
-	ic_inst <= "1110" & "000" & "1010"  & "1" & "0101" & "1000" & "00000000" & "0100";
+	ic_inst <= "1110" & "000" & "1010"  & "1" & "0101" & "1000" & "00000000" & "0101";
 	-- waiting no register write (0x00) vnzc = "0101"
 	
 	--- CMN [r8], r4, r4
@@ -658,10 +737,10 @@ begin
 	report "CONDITIONS";
 	
 	--- Conditions
-	--- MOV r4, 0x08
+	--- MOV r4, 0x0F
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "001" & "1101" & "0" & "0000" & "0100" & "0000" & "00001111";
-	--- MOV r5, 0x08
+	--- MOV r5, 0xF0
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "001" & "1101" & "0" & "0000" & "0101" & "0000" & "11110000";
 
@@ -745,9 +824,9 @@ begin
 	ic_inst <= "0111" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
 	
 	--- Setting V = 0
-	--- CMP r5, r4
+	--- CMN r5, r4
 	wait until rising_edge(ck) and dec_pop = '1';
-	ic_inst <= "1110" & "000" & "1011" & "1" & "0100" & "0000" & "00000000" & "0101";
+	ic_inst <= "1110" & "000" & "1011" & "1" & "0101" & "0000" & "00000000" & "0100";
 	--- MOV VC r6, r5
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "0111" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
@@ -759,10 +838,10 @@ begin
 	--- CMP r4, r5
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "000" & "1010" & "1" & "0101" & "0000" & "00000000" & "0100";
-	--- MOV LS r6, r4
+	--- MOV HI r6, r4
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1000" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
-	--- MOV GE r6, r5
+	--- MOV LS r6, r5
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1001" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
 	
@@ -770,39 +849,39 @@ begin
 	--- MOV r0, 0x0000 0000
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "001" & "1101" & "1" & "0000" & "0000" & "0000" & "00000000";
-	--- MOV GE r6, r5
+	--- MOV LS r6, r5
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1001" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
-	--- MOV LS r6, r4
+	--- MOV HI r6, r4
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1000" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
 
 	--- Setting N = V = 1
 	--- CMP r4, r5
 	wait until rising_edge(ck) and dec_pop = '1';
-	ic_inst <= "1110" & "001" & "1010" & "1" & "0100" & "0000" & "00000000" & "0101";
-	--- MOV LT r6, r4
+	ic_inst <= "1110" & "000" & "1010" & "1" & "0100" & "0000" & "00000000" & "0101";
+	--- MOV GE r6, r4
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1010" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
-	--- MOV GT r6, r5
+	--- MOV LT r6, r5
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1011" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
 	
 	--- Setting N = 1 V = 0
-	--- MOV r0, 0x0000 0000
+	--- CMP r5, r4
 	wait until rising_edge(ck) and dec_pop = '1';
-	ic_inst <= "1110" & "001" & "1101" & "1" & "0000" & "0000" & "0001" & "00000011";
-	--- MOV GT r6, r5
+	ic_inst <= "1110" & "000" & "1010" & "1" & "0101" & "0000" & "00000000" & "0100";
+	--- MOV LT r6, r5
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1011" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
-	--- MOV LS r6, r4
+	--- MOV GE r6, r4
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1010" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
 
 	--- Setting Z = 0 && N = V = 1
 	--- CMP r4, r5
 	wait until rising_edge(ck) and dec_pop = '1';
-	ic_inst <= "1110" & "001" & "1010" & "1" & "0100" & "0000" & "00000000" & "0101";
+	ic_inst <= "1110" & "000" & "1010" & "1" & "0100" & "0000" & "00000000" & "0101";
 	--- MOV LT r6, r4
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1100" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
@@ -811,9 +890,9 @@ begin
 	ic_inst <= "1101" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
 	
 	--- Setting Z = 1 || N = 1 V = 0
-	--- MOV r0, 0x0000 0000
+	--- CMP r5, r4
 	wait until rising_edge(ck) and dec_pop = '1';
-	ic_inst <= "1110" & "001" & "1101" & "1" & "0000" & "0000" & "0001" & "00000011";
+	ic_inst <= "1110" & "000" & "1010" & "1" & "0101" & "0000" & "00000000" & "0100";
 	--- MOV GT r6, r5
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1101" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0101";
@@ -821,8 +900,16 @@ begin
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1100" & "000" & "1101" & "0" & "0000" & "0110" & "00000000" & "0100";
 	
-	
+	--- Testing flush
+	report "FIFO FLUSH / BRANCH";
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "001" & "1101" & "0" & "0000" & "1111" & "0000" & "11111111";
 
+	wait until rising_edge(ck);
+	wait until rising_edge(ck);
+	wait until rising_edge(ck);
+	
+	
 	
 	wait until rising_edge(ck);
 	wait until rising_edge(ck);
@@ -838,4 +925,494 @@ begin
 	wait;
 
 end process;
+
+process --- Result verification process
+	variable i : integer := 0;
+begin
+	wait until dec_pop = '1';
+	
+	wait until rising_edge(ck); -- INSTRUCTION 0 -- ADD r0, r0, 0x0F
+	wait for 10 ns;
+	i := test_instr(i, "00", "00010", "00000", '0', "00",
+									x"00000000", x"0000000F", x"0000000F",
+									x"0", "10", "0000");
+	
+	wait until rising_edge(ck); -- INSTRUCTION 1 -- ADD r1, r1, 0x08
+	wait for 10 ns;
+	i := test_instr(i, "00", "00010", "00000", '0', "00",
+									x"00000000", x"00000008", x"00000008",
+									x"1", "10", "0000");
+	
+	assert dec_pop = '0' report "instruction " & integer'image(i+1) & " poped too early" severity error;
+	wait until rising_edge(ck);
+	wait until rising_edge(ck); -- INSTRUCTION 2 -- SUB S r2, r0, r1
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '1', "01",
+									x"0000000F", x"00000008", x"00000007",
+									x"2", "11", "1100");
+	
+	wait until rising_edge(ck); -- INSTRUCTION 3 -- AND r2, r0, r1
+	wait for 10 ns;
+	i := test_instr(i, "01", "10000", "00000", '0', "00",
+									x"0000000F", x"00000008", x"00000008",
+									x"2", "10", "0000");
+	
+	wait until rising_edge(ck); -- INSTRUCTION 4 -- EOR r2, r0, r1
+	wait for 10 ns;
+	i := test_instr(i, "11", "10000", "00000", '0', "00",
+									x"0000000F", x"00000008", x"00000007",
+									x"2", "10", "0000");
+	
+	wait until rising_edge(ck); -- INSTRUCTION 5 -- SUB r2, r0, r1
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '1', "01",
+									x"0000000F", x"00000008", x"00000007",
+									x"2", "10", "1100");
+	
+	wait until rising_edge(ck); -- INSTRUCTION 6 -- RSB r2, r0, r1
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '1', "10",
+									x"0000000F", x"00000008", x"FFFFFFF9",
+									x"2", "10", "0110");
+	
+	wait until rising_edge(ck); -- INSTRUCTION 7 -- ADD r2, r0, r1
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '0', "00",
+									x"0000000F", x"00000008", x"00000017",
+									x"2", "10", "0000");
+	
+	wait until rising_edge(ck); -- INSTRUCTION 8 -- ADC r2, r0, r1
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '1', "00",
+									x"0000000F", x"00000008", x"00000018",
+									x"2", "10", "0000");
+	
+	wait until rising_edge(ck); -- INSTRUCTION 9 -- SBC r2, r0, r1
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '1', "01",
+									x"0000000F", x"00000008", x"00000007",
+									x"2", "10", "1100");
+	
+	wait until rising_edge(ck); -- INSTRUCTION 10 -- RSC r2, r0, r1
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '1', "10",
+									x"0000000F", x"00000008", x"FFFFFFF9",
+									x"2", "10", "0110");
+	
+	wait until rising_edge(ck); -- INSTRUCTION 11 -- ORR r2, r0, r1
+	wait for 10 ns;
+	i := test_instr(i, "10", "10000", "00000", '0', "00",
+									x"0000000F", x"00000008", x"0000000F",
+									x"2", "10", "0000");
+	
+	wait until rising_edge(ck); -- INSTRUCTION 12 -- MOV r2, r1
+	wait for 10 ns;
+	i := test_instr(i, "10", "10000", "00000", '0', "00",
+									x"00000000", x"00000008", x"00000008",
+									x"2", "10", "0000");
+	
+	wait until rising_edge(ck); -- INSTRUCTION 13 -- BIC r2, r1
+	wait for 10 ns;
+	i := test_instr(i, "01", "10000", "00000", '0', "01",
+									x"0000000F", x"00000008", x"00000007",
+									x"2", "10", "0000");
+	
+	wait until rising_edge(ck); -- INSTRUCTION 14 -- MVN r2, r1
+	wait for 10 ns;
+	i := test_instr(i, "10", "10000", "00000", '0', "01",
+									x"00000000", x"00000008", x"FFFFFFF7",
+									x"2", "10", "0010");
+
+	wait until rising_edge(ck); -- T&Q 0 -- ADD r0, r3, 0x08
+	wait for 10 ns;
+	i := 0;
+	i := test_instr(i, "10", "00010", "00000", '0', "00",
+									x"00000000", x"0000000F", x"0000000F",
+									x"4", "10", "0000");
+	
+	wait until rising_edge(ck); -- T&Q 1 -- MOV r5, 0xC000 0003
+	wait for 10 ns;
+	i := test_instr(i, "10", "00010", "00010", '0', "00",
+									x"00000000", x"0000000F", x"C0000003",
+									x"5", "10", "1010"); -- cary set because of rotate
+	
+	wait until rising_edge(ck); -- T&Q 2 -- TST S r4, r4 -- out r8 ingored
+	wait for 10 ns;
+	i := test_instr(i, "01", "10000", "00000", '0', "00",
+									x"0000000F", x"0000000F", x"0000000F",
+									x"8", "01", "0000");
+	
+	wait until rising_edge(ck); -- T&Q 3 -- TST S r4, r5 -- out r8 ingored
+	wait for 10 ns;
+	i := test_instr(i, "01", "10000", "00000", '0', "00",
+									x"0000000F", x"C0000003", x"00000003",
+									x"8", "01", "0000");
+	
+	wait until rising_edge(ck); -- T&Q 4 -- TST S r5, r5 -- out r8 ingored
+	wait for 10 ns;
+	i := test_instr(i, "01", "10000", "00000", '0', "00",
+									x"C0000003", x"C0000003", x"C0000003",
+									x"8", "01", "0010");
+	
+	wait until rising_edge(ck); -- T&Q 5 -- TEQ S r4, r4 -- out r8 ingored
+	wait for 10 ns;
+	i := test_instr(i, "11", "10000", "00000", '0', "00",
+									x"0000000F", x"0000000F", x"00000000",
+									x"8", "01", "0001");
+	
+	wait until rising_edge(ck); -- T&Q 6 -- TEQ S r4, r5 -- out r8 ingored
+	wait for 10 ns;
+	i := test_instr(i, "11", "10000", "00000", '0', "00",
+									x"0000000F", x"C0000003", x"C000000C",
+									x"8", "01", "0010");
+	
+	wait until rising_edge(ck); -- T&Q 7 -- CMP S r4, r4 -- out r8 ingored
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '1', "01",
+									x"0000000F", x"0000000F", x"00000000",
+									x"8", "01", "1101");
+	
+	wait until rising_edge(ck); -- T&Q 8 -- CMP S r4, r5 -- out r8 ingored
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '1', "01",
+									x"0000000F", x"C0000003", x"4000000C",
+									x"8", "01", "0000");
+	
+	wait until rising_edge(ck); -- T&Q 9 -- CMP S r5, r5 -- out r8 ingored
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '1', "01",
+									x"C0000003", x"C0000003", x"00000000",
+									x"8", "01", "1101");
+	
+	wait until rising_edge(ck); -- T&Q 10 -- CMN S r4, r4 -- out r8 ingored
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '0', "00",
+									x"0000000F", x"0000000F", x"0000001E",
+									x"8", "01", "0000");
+	
+	wait until rising_edge(ck); -- T&Q 11 -- CMN S r4, r5 -- out r8 ingored
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '0', "00",
+									x"0000000F", x"C0000003", x"C0000012",
+									x"8", "01", "0110");
+	
+	
+	wait until rising_edge(ck); -- CONDITIONS 0 -- MOV r4, 0x0F
+	wait for 10 ns;
+	i := 0;
+	i := test_instr(i, "10", "00010", "00000", '0', "00",
+									x"00000000", x"0000000F", x"0000000F",
+									x"4", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 1 -- MOV r5, 0x0F0
+	wait for 10 ns;
+	i := test_instr(i, "10", "00010", "00000", '0', "00",
+									x"00000000", x"000000F0", x"000000F0",
+									x"5", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 2 -- TEQ S r4, r4 -- ignored out r4
+	wait for 10 ns;
+	i := test_instr(i, "11", "10000", "00000", '0', "00",
+									x"0000000F", x"0000000F", x"00000000",
+									x"4", "01", "0001");
+	
+	assert dec_pop = '0' report "instruction " & integer'image(i+1) & " poped too early" severity error;
+	wait until rising_edge(ck); -- dependance
+	wait until rising_edge(ck); -- CONDITIONS 3 -- MOV EQ r6, r4
+	wait for 10 ns;
+	i := test_instr(i, "10", "10000", "00000", '0', "00",
+									x"00000000", x"0000000F", x"0000000F",
+									x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 4 -- MOV NE r6, r5
+	wait for 10 ns;
+	i := test_instr_previous(i, "10", "10000", "00000", '0', "00",
+													 x"00000000", x"0000000F", x"0000000F",
+													 x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 5 -- TEQ S r4, r5 -- ignored out r4
+	wait for 10 ns;
+	i := test_instr(i, "11", "10000", "00000", '0', "00",
+									x"0000000F", x"000000F0", x"000000FF",
+									x"4", "01", "0000");
+
+	assert dec_pop = '0' report "instruction " & integer'image(i+1) & " poped too early" severity error;
+	wait until rising_edge(ck); -- dependance
+	wait until rising_edge(ck); -- CONDITIONS 6 -- MOV NE r6, r5
+	wait for 10 ns;
+	i := test_instr(i, "10", "10000", "00000", '0', "00",
+									x"00000000", x"000000F0", x"000000F0",
+									x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 7 -- MOV EQ r6, r4
+	wait for 10 ns;
+	i := test_instr_previous(i, "10", "10000", "00000", '0', "00",
+													 x"00000000", x"000000F0", x"000000F0",
+													 x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 8 -- CMP S r4, r4 -- ignored out r4
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '1', "01",
+									x"0000000F", x"0000000F", x"00000000",
+									x"4", "01", "1101");
+	
+	assert dec_pop = '0' report "instruction " & integer'image(i+1) & " poped too early" severity error;
+	wait until rising_edge(ck); -- dependance
+	wait until rising_edge(ck); -- CONDITIONS 9 -- MOV HS r6, r4
+	wait for 10 ns;
+	i := test_instr(i, "10", "10000", "00000", '0', "00",
+									x"00000000", x"0000000F", x"0000000F",
+									x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 10 -- MOV LO r6, r5
+	wait for 10 ns;
+	i := test_instr_previous(i, "10", "10000", "00000", '0', "00",
+													 x"00000000", x"0000000F", x"0000000F",
+													 x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 11 -- TEQ S r4, r5 -- ignored out r4
+	wait for 10 ns;
+	i := test_instr(i, "11", "10000", "00000", '0', "00",
+									x"0000000F", x"000000F0", x"000000FF",
+									x"4", "01", "0000");
+	
+	assert dec_pop = '0' report "instruction " & integer'image(i+1) & " poped too early" severity error;
+	wait until rising_edge(ck); -- dependance
+	wait until rising_edge(ck); -- CONDITIONS 12 -- MOV LO r6, r5
+	wait for 10 ns;
+	i := test_instr(i, "10", "10000", "00000", '0', "00",
+									x"00000000", x"000000F0", x"000000F0",
+									x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 13 -- MOV HI r6, r4
+	wait for 10 ns;
+	i := test_instr_previous(i, "10", "10000", "00000", '0', "00",
+													 x"00000000", x"000000F0", x"000000F0",
+													 x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 14 -- MOV S r0, 0xFF000000
+	wait for 10 ns;
+	i := test_instr(i, "10", "00010", "01000", '0', "00",
+									x"00000000", x"000000FF", x"FF000000",
+									x"0", "11", "1010");
+	
+	assert dec_pop = '0' report "instruction " & integer'image(i+1) & " poped too early" severity error;
+	wait until rising_edge(ck); -- dependance
+	wait until rising_edge(ck); -- CONDITIONS 15 -- MOV MI r6, r4
+	wait for 10 ns;
+	i := test_instr(i, "10", "10000", "00000", '0', "00",
+									x"00000000", x"0000000F", x"0000000F",
+									x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 16 -- MOV PL r6, r5
+	wait for 10 ns;
+	i := test_instr_previous(i, "10", "10000", "00000", '0', "00",
+													 x"00000000", x"0000000F", x"0000000F",
+													 x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 17 -- MOV r0, 0x00
+	wait for 10 ns;
+	i := test_instr(i, "10", "00010", "00000", '0', "00",
+									x"00000000", x"00000000", x"00000000",
+									x"0", "11", "0001");
+	
+	assert dec_pop = '0' report "instruction " & integer'image(i+1) & " poped too early" severity error;
+	wait until rising_edge(ck); -- dependance
+	wait until rising_edge(ck); -- CONDITIONS 18 -- MOV PL r6, r5
+	wait for 10 ns;
+	i := test_instr(i, "10", "10000", "00000", '0', "00",
+									x"00000000", x"000000F0", x"000000F0",
+									x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 19 -- MOV MI r6, r4
+	wait for 10 ns;
+	i := test_instr_previous(i, "10", "10000", "00000", '0', "00",
+													 x"00000000", x"000000F0", x"000000F0",
+													 x"6", "10", "0000");
+
+	wait until rising_edge(ck); -- CONDITIONS 20 -- CMP r4, r4 -- ingored out r0
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '1', "01",
+									x"0000000F", x"0000000F", x"00000000",
+									x"0", "01", "1101");
+	
+	assert dec_pop = '0' report "instruction " & integer'image(i+1) & " poped too early" severity error;
+	wait until rising_edge(ck); -- dependance
+	wait until rising_edge(ck); -- CONDITIONS 21 -- MOV VS r6, r4
+	wait for 10 ns;
+	i := test_instr(i, "10", "10000", "00000", '0', "00",
+									x"00000000", x"0000000F", x"0000000F",
+									x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 22 -- MOV VC r6, r5
+	wait for 10 ns;
+	i := test_instr_previous(i, "10", "10000", "00000", '0', "00",
+													 x"00000000", x"0000000F", x"0000000F",
+													 x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 23 -- CMN r5, r4 -- ingored out r0
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '0', "00",
+									x"000000F0", x"0000000F", x"000000FF",
+									x"0", "01", "0000");
+	
+	assert dec_pop = '0' report "instruction " & integer'image(i+1) & " poped too early" severity error;
+	wait until rising_edge(ck); -- dependance
+	wait until rising_edge(ck); -- CONDITIONS 24 -- MOV VC r6, r5
+	wait for 10 ns;
+	i := test_instr(i, "10", "10000", "00000", '0', "00",
+									x"00000000", x"000000F0", x"000000F0",
+									x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 25 -- MOV VS r6, r4
+	wait for 10 ns;
+	i := test_instr_previous(i, "10", "10000", "00000", '0', "00",
+													 x"00000000", x"000000F0", x"000000F0",
+													 x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 26 -- CMP r4, r5 -- ingored out r0
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '1', "01",
+									x"000000F0", x"0000000F", x"000000E1",
+									x"0", "01", "1100");
+	
+	assert dec_pop = '0' report "instruction " & integer'image(i+1) & " poped too early" severity error;
+	wait until rising_edge(ck); -- dependance
+	wait until rising_edge(ck); -- CONDITIONS 27 -- MOV LS r6, r4
+	wait for 10 ns;
+	i := test_instr(i, "10", "10000", "00000", '0', "00",
+									x"00000000", x"0000000F", x"0000000F",
+									x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 28 -- MOV GE r6, r5
+	wait for 10 ns;
+	i := test_instr_previous(i, "10", "10000", "00000", '0', "00",
+													 x"00000000", x"0000000F", x"0000000F",
+													 x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 29 -- MOV r0, 0x00
+	wait for 10 ns;
+	i := test_instr(i, "10", "00010", "00000", '0', "00",
+									x"00000000", x"00000000", x"00000000",
+									x"0", "11", "0001");
+	
+	assert dec_pop = '0' report "instruction " & integer'image(i+1) & " poped too early" severity error;
+	wait until rising_edge(ck); -- dependance
+	wait until rising_edge(ck); -- CONDITIONS 30 -- MOV GE r6, r5
+	wait for 10 ns;
+	i := test_instr(i, "10", "10000", "00000", '0', "00",
+									x"00000000", x"000000F0", x"000000F0",
+									x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 31 -- MOV LS r6, r4
+	wait for 10 ns;
+	i := test_instr_previous(i, "10", "10000", "00000", '0', "00",
+													 x"00000000", x"000000F0", x"000000F0",
+													 x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 32 -- CMP r4, r5 -- ingored out r0
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '1', "01",
+									x"0000000F", x"000000F0", x"FFFFFF1F",
+									x"0", "01", "0110");
+	
+	assert dec_pop = '0' report "instruction " & integer'image(i+1) & " poped too early" severity error;
+	wait until rising_edge(ck); -- dependance
+	wait until rising_edge(ck); -- CONDITIONS 33 -- MOV LT r6, r4
+	wait for 10 ns;
+	i := test_instr(i, "10", "10000", "00000", '0', "00",
+									x"00000000", x"0000000F", x"0000000F",
+									x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 34 -- MOV GT r6, r5
+	wait for 10 ns;
+	i := test_instr_previous(i, "10", "10000", "00000", '0', "00",
+													 x"00000000", x"0000000F", x"0000000F",
+													 x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 35 -- CMP r5, r4
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '1', "01",
+									x"000000F0", x"0000000F", x"000000E1",
+									x"0", "01", "1100");
+	
+	assert dec_pop = '0' report "instruction " & integer'image(i+1) & " poped too early" severity error;
+	wait until rising_edge(ck); -- dependance
+	wait until rising_edge(ck); -- CONDITIONS 36 -- MOV GE r6, r5
+	wait for 10 ns;
+	i := test_instr(i, "10", "10000", "00000", '0', "00",
+									x"00000000", x"000000F0", x"000000F0",
+									x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 37 -- MOV LS r6, r4
+	wait for 10 ns;
+	i := test_instr_previous(i, "10", "10000", "00000", '0', "00",
+													 x"00000000", x"000000F0", x"000000F0",
+													 x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 38 -- CMP r4, r5 -- ingored out r0
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '1', "01",
+									x"0000000F", x"000000F0", x"FFFFFF1F",
+									x"0", "01", "0110");
+	
+	assert dec_pop = '0' report "instruction " & integer'image(i+1) & " poped too early" severity error;
+	wait until rising_edge(ck); -- dependance
+	wait until rising_edge(ck); -- CONDITIONS 39 -- MOV LT r6, r4
+	wait for 10 ns;
+	i := test_instr(i, "10", "10000", "00000", '0', "00",
+									x"00000000", x"0000000F", x"0000000F",
+									x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 40 -- MOV GT r6, r5
+	wait for 10 ns;
+	i := test_instr_previous(i, "10", "10000", "00000", '0', "00",
+													 x"00000000", x"0000000F", x"0000000F",
+													 x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 41 -- CMP r5, r4
+	wait for 10 ns;
+	i := test_instr(i, "00", "10000", "00000", '1', "01",
+									x"000000F0", x"0000000F", x"000000E1",
+									x"0", "01", "1100");
+	
+	assert dec_pop = '0' report "instruction " & integer'image(i+1) & " poped too early" severity error;
+	wait until rising_edge(ck); -- dependance
+	wait until rising_edge(ck); -- CONDITIONS 42 -- MOV GE r6, r5
+	wait for 10 ns;
+	i := test_instr(i, "10", "10000", "00000", '0', "00",
+									x"00000000", x"000000F0", x"000000F0",
+									x"6", "10", "0000");
+	
+	wait until rising_edge(ck); -- CONDITIONS 43 -- MOV LS r6, r4
+	wait for 10 ns;
+	i := test_instr_previous(i, "10", "10000", "00000", '0', "00",
+													 x"00000000", x"000000F0", x"000000F0",
+													 x"6", "10", "0000");
+		
+	wait until rising_edge(ck); -- BRANCH -- MOV r15, 0x0FF
+	wait for 10 ns;
+	i := 0;
+	i := test_instr_previous(i, "10", "00010", "00000", '0', "00",
+													 x"00000000", x"000000FF", x"000000FF",
+													 x"F", "10", "0000");
+	
+	wait until rising_edge(ck);
+	wait for 10 ns;
+	assert dec2if_empty = '1' report "instruction " & integer'image(i) & " 2 dec2if still receiving adresses" severity error;
+	
+	wait until rising_edge(ck);
+	wait for 10 ns;
+	assert if2dec_empty = '1' report "instruction " & integer'image(i) & " 3 if2dec still receiving instructions" severity error;
+
+	wait until rising_edge(ck);
+	wait for 10 ns;
+	assert dec_pc = x"000000FF" report "invalid pc 1" severity note;
+	
+	wait until rising_edge(ck);	
+	
+	
+	
+	wait;
+	end process;
 end;
