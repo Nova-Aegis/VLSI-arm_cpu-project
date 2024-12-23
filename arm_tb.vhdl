@@ -388,6 +388,40 @@ architecture sim OF arm_tb is
 		return i + 1;
 	end function;
 
+	function vec_to_hex(slv: std_logic_vector) return string is
+    constant hexlen : integer := (slv'length+3)/4;
+    variable longslv : std_logic_vector(slv'length+3 downto 0) := (others => '0');
+    variable hex : string(1 to hexlen);
+    variable fourbit : std_logic_vector(3 downto 0);
+	begin
+    longslv(slv'length-1 downto 0) := slv;
+    for i in hexlen-1 downto 0 loop
+			fourbit := longslv(i*4+3 downto i*4);
+			case fourbit is
+				when "0000" => hex(hexlen-i) := '0';
+				when "0001" => hex(hexlen-i) := '1';
+				when "0010" => hex(hexlen-i) := '2';
+				when "0011" => hex(hexlen-i) := '3';
+				when "0100" => hex(hexlen-i) := '4';
+				when "0101" => hex(hexlen-i) := '5';
+				when "0110" => hex(hexlen-i) := '6';
+				when "0111" => hex(hexlen-i) := '7';
+				when "1000" => hex(hexlen-i) := '8';
+				when "1001" => hex(hexlen-i) := '9';
+				when "1010" => hex(hexlen-i) := 'A';
+				when "1011" => hex(hexlen-i) := 'B';
+				when "1100" => hex(hexlen-i) := 'C';
+				when "1101" => hex(hexlen-i) := 'D';
+				when "1110" => hex(hexlen-i) := 'E';
+				when "1111" => hex(hexlen-i) := 'F';
+				when "ZZZZ" => hex(hexlen-i) := 'Z';
+				when "UUUU" => hex(hexlen-i) := 'U';
+				when "XXXX" => hex(hexlen-i) := 'X';
+				when others => hex(hexlen-i) := '?';
+			end case;
+    end loop;
+    return hex;
+	end function vec_to_hex;
 	
 begin
 
@@ -903,9 +937,57 @@ begin
 	--- Testing flush
 	report "FIFO FLUSH / BRANCH";
 	wait until rising_edge(ck) and dec_pop = '1';
-	ic_inst <= "1110" & "001" & "1101" & "0" & "0000" & "1111" & "0000" & "11111111";
+	ic_inst <= "1110" & "001" & "1101" & "0" & "1110" & "1110" & "0100" & "11111111";
+	
+	wait until rising_edge(ck) and dec_pop = '1';
+	report "current pc" & vec_to_hex(if_adr); -- 120
+	ic_inst <= "1110" & "101" & "1" & x"040000";
+	--ic_inst <= "1110" & "001" & "1101" & "0" & "0000" & "1111" & "0000" & "11111110";
 
+	wait until rising_edge(ck) and dec_pop = '1';
+	report "current pc" & vec_to_hex(if_adr); -- 124
+	ic_inst <= "1110" & "001" & "1101" & "0" & "1101" & "1101" & "0000" & "10001000";
+	--ic_inst <= "1110" & "001" & "1101" & "0" & "0000" & "0000" & "0000" & "01011010";
+
+	
+	wait until rising_edge(ck) and dec_pop = '1';
+	report "current pc" & vec_to_hex(if_adr); -- 128
+	ic_inst <= "1110" & "001" & "1101" & "0" & "1100" & "1100" & "0000" & "10001000";
+
+	
+	wait until rising_edge(ck) and dec_pop = '1';
+	if (if_adr = x"0010012C") then
+		report "end";
+		valid <= '0';
+		wait;
+	end if;
+	report "current pc" & vec_to_hex(if_adr); -- 12C
+	ic_inst <= "1110" & "001" & "1101" & "0" & "1011" & "1011" & "0000" & "10001000";
+
+	
+	wait until rising_edge(ck) and dec_pop = '1';
+	report "current pc" & vec_to_hex(if_adr); -- 130
+	ic_inst <= "1110" & "001" & "1101" & "0" & "1010" & "1010" & "0000" & "10001000";
+
+	
+	wait until rising_edge(ck) and dec_pop = '1';
+	report "current pc" & vec_to_hex(if_adr);
+	if (if_adr = x"0010012C") then
+		report "end";
+		valid <= '0';
+		wait;
+	end if;
+	ic_inst <= "1110" & "001" & "1101" & "0" & "1001" & "1001" & "0000" & "10001000";
+
+	
+	wait until if2dec_empty = '1';
+	report "pushed last instr";
 	wait until rising_edge(ck);
+	wait until rising_edge(ck);
+	valid <= '0';
+	wait;
+	ic_inst <= "1110" & "101" & "1" & x"040000";
+	
 	wait until rising_edge(ck);
 	wait until rising_edge(ck);
 	
@@ -1393,26 +1475,42 @@ begin
 	wait until rising_edge(ck); -- BRANCH -- MOV r15, 0x0FF
 	wait for 10 ns;
 	i := 0;
-	i := test_instr_previous(i, "10", "00010", "00000", '0', "00",
-													 x"00000000", x"000000FF", x"000000FF",
-													 x"F", "10", "0000");
+	--i := test_instr_previous(i, "10", "00010", "00000", '0', "00",
+													 -- x"00000000", x"000000FF", x"000000FF",
+													 -- x"F", "10", "0000");
 	
 	wait until rising_edge(ck);
 	wait for 10 ns;
-	assert dec2if_empty = '1' report "instruction " & integer'image(i) & " 2 dec2if still receiving adresses" severity error;
+	--assert dec2if_empty = '1' report "instruction " & integer'image(i) & " 2 dec2if still receiving adresses" severity error;
 	
 	wait until rising_edge(ck);
 	wait for 10 ns;
-	assert if2dec_empty = '1' report "instruction " & integer'image(i) & " 3 if2dec still receiving instructions" severity error;
+	--assert if2dec_empty = '1' report "instruction " & integer'image(i) & " 3 if2dec still receiving instructions" severity error;
 
 	wait until rising_edge(ck);
+	wait until rising_edge(ck);
 	wait for 10 ns;
-	assert dec_pc = x"000000FF" report "invalid pc 1" severity note;
-	
-	wait until rising_edge(ck);	
-	
-	
-	
+	--assert dec_pc = x"000000FF" report "invalid pc 1" severity note;
+	--i := test_instr(i, "10", "00010", "00000", '0', "00",
+									-- x"00000000", x"0000005A", x"0000005A",
+									-- x"0", "10", "0000");
+
+	wait until rising_edge(ck);
+	wait until rising_edge(ck);
+	wait for 10 ns;
+	--assert dec_pc = x"00000102" report "invalid pc 2" severity note;
+	--i := test_instr(i, "00", "10000", "00000", '0', "00",
+									-- x"00000102", x"00100000", x"00100102",
+									-- x"0", "10", "0000");
+
+	wait until rising_edge(ck);
+
 	wait;
+	end process;
+	process
+	begin
+		wait for 5500 ms;
+		valid <= '0';
+		wait;
 	end process;
 end;

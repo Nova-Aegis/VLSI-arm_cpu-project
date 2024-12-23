@@ -599,23 +599,25 @@ begin
 
 -- Decode interface operands
 
-	op1 <=	reg_pc	when branch_t = '1' else
-					x"00000000" when regop_t = '1' and (mov_i = '1' or mvn_i = '1') else
-					rdata1;
+	op1 <= reg_pc	when branch_t = '1' and blink = '0' else
+				 x"00000000" when regop_t = '1' and (mov_i = '1' or mvn_i = '1') else
+				 rdata1;
 
 	offset32 <=	(31 downto 26 => if_ir(23)) & if_ir(23 downto 0) & "00";
 	-- std_logic_vector(resize(signed(if_ir(23 downto 0) & "00"), 32));
 
-	op2	<=  offset32 		when branch_t = '1' else
-					x"FFFFFFFF" when mtrans_t = '1' and if_ir(23) = '0' else
-					x"00000001" when mtrans_t = '1' and if_ir(23) = '1' else
-					(31 downto 12 => '0') & if_ir(11 downto 0) 	when trans_t = '1' and if_ir(25) = '0' else -- cas immédiat pour accès mémoire
-					(31 downto 8 => '0') & if_ir(7 downto 0) 		when regop_t = '1' and if_ir(25) = '1' else -- cas immédiat pour opération
-					rdata2;
+	op2	<= x"00000004" when branch_t = '1' and blink = '1' else
+				 offset32 		when branch_t = '1' else
+				 x"FFFFFFFF" when mtrans_t = '1' and if_ir(23) = '0' else
+				 x"00000001" when mtrans_t = '1' and if_ir(23) = '1' else
+				 (31 downto 12 => '0') & if_ir(11 downto 0) 	when trans_t = '1' and if_ir(25) = '0' else -- cas immédiat pour accès mémoire
+				 (31 downto 8 => '0') & if_ir(7 downto 0) 		when regop_t = '1' and if_ir(25) = '1' else -- cas immédiat pour opération
+				 rdata2;
 
-	alu_dest <=	 "1111" 							when branch_t = '1' else
-							 if_ir(19 downto 16)	when mult_t  = '1' else
-							 if_ir(15 downto 12);
+	alu_dest <= "1110" when branch_t = '1' and blink = '1' else
+							"1111" when branch_t = '1' else
+							if_ir(19 downto 16)	when mult_t  = '1' else
+							if_ir(15 downto 12);
 
 	alu_wb	<= '1' when ((regop_t = '1' and (tst_i = '0' and teq_i = '0' and cmp_i = '0' and cmn_i = '0'))--- DEBUGING --- if_ir(24 downto 21) <= X"7" and if_ir(24 downto 21) >= X"C") -- pas de wb pour TST à CMN
 						 					or mult_t = '1' or branch_t = '1') else
@@ -626,18 +628,22 @@ begin
 
 -- reg read
 	-- Rn
-	radr1 <= (if_ir(15 downto 12)) when (mult_t = '1') else
+	radr1 <= "1110" when branch_t = '1' and blink = '1' else
+					 "1111" when branch_t = '1' and blink = '0' else
+					 (if_ir(15 downto 12)) when (mult_t = '1') else
 					 (if_ir(19 downto 16)); -- regop_t, swap_t trans_t, mtrans_t (branch_t pas de Rn)
 	
 	-- Rm
 	radr2 <= if_ir(3 downto 0);
 
 	-- Rs
-	radr3 <= if_ir(11 downto 8);
+	radr3 <= "1111" when branch_t = '1' and blink = '1' else
+					 if_ir(11 downto 8);
 
 -- Reg Invalid
 
-	inval_exe_adr <= "1111" when branch_t = '1' else 
+	inval_exe_adr <= "1110" when branch_t = '1' and blink = '1' else
+									 "1111" when branch_t = '1' else 
 									 if_ir(19 downto 16) when trans_t = '1' or mtrans_t = '1' or mult_t = '1' else
 									 if_ir(15 downto 12);
 
@@ -690,17 +696,20 @@ begin
 											 ((regop_t = '1' and ((if_ir(25) = '0' and if_ir(4) = '0') or if_ir(25) = '1')) or
 												(trans_t = '1' and ((if_ir(25) = '1' and if_ir(4) = '0') or if_ir(25) = '0')) or
 												(mtrans_t = '1' or branch_t = '1' or mtrans_t = '1' or mult_t = '1'))
+											 or
+											 (rvalid3 = '1' and branch_t = '1' and blink = '1' and
+												regop_t = '0' and mtrans_t = '0' and mult_t = '0' and trans_t = '0')
 											 )) else
 						'0';
 
 -- Decode to mem interface 
 	ld_dest <= if_ir(15 downto 12) when trans_t = '1' else
 						 mtrans_rd;
-	pre_index <= if_ir(24);
+	pre_index <= if_ir(24) or (branch_t and blink);
 
 	mem_lw <= ldr_i;
 	mem_lb <= ldrb_i;
-	mem_sw <= str_i;
+	mem_sw <= str_i or (branch_t and blink);
 	mem_sb <= strb_i;
 
 -- Shifter command
@@ -737,10 +746,12 @@ begin
 	comp_op1	<= '1' when (rsb_i = '1' or rsc_i = '1') else
 							 '0';
 	comp_op2	<=	'1' when (sub_i = '1' or sbc_i = '1' or cmp_i = '1' or bic_i = '1' or mvn_i = '1') else
+								'1' when (branch_t = '1' and blink = '1') else
 								'0';
 
 	alu_cy <=	'1'	when (sub_i = '1' or rsb_i = '1' or cmp_i = '1') else
 						cry when (adc_i = '1' or sbc_i = '1' or rsc_i = '1') else
+						'1'	when (branch_t = '1' and blink = '1') else
 						'0';
 
 -- Alu command
@@ -870,6 +881,7 @@ begin
 			mtrans_shift <= '0';
 			mtrans_loop_adr <= '0';
 			dec2if_push <= '1';
+			blink <= '0';
 
 			--- DEBUG end
 			if dec2if_full = '1' and reg_pcv = '1' then -- T2 (FETCH -> FETCH)
@@ -884,6 +896,9 @@ begin
 		when RUN =>
 			--- DEBUG
 			debug_state <= x"1";
+			if (branch_t = '1' and bl_i = '1') then
+				blink <= '1';
+			end if;
 			--report "switched to RUN";
 			
 	-- 		if (if2dec_empty = '1' or dec2exe_full = '1' or condv = '0') and dec2if_full = '0'
@@ -892,12 +907,11 @@ begin
 			-- end if;
 			if (if2dec_empty = '1' and if2dec_pop = '0') then
 				--- DEBUG report "if2dec_empty";
-				if (dec2if_full = '0') then
-					inc_pc <= '1';
-				else
-					inc_pc <= '0';
+				if (dec2if_full = '1') then
+					dec2if_push <= '0';
 				end if;
 				dec2exe_push <= '0';
+				next_state <= RUN;
 			else
 				if (condv = '0' or operv = '0' or (dec2exe_full = '1' and exe_pop = '0')) then
 					--- DEBUG if (condv = '0') then
@@ -910,37 +924,36 @@ begin
 					--- DEBUG report "not condv or not operv";
 					dec2exe_push <= '0';
 					if2dec_pop <= '0';
-					inc_pc <= '0';
+					dec2if_push <= '0';
+					next_state <= RUN;
 				elsif (cond = '0') then
 					--report "not cond";
 					dec2exe_push <= '0';
 					if2dec_pop <= '1';
-					inc_pc <= '1';
+					dec2if_push <= '1';
+					next_state <= RUN;
 				else
 					if (branch_t = '1') then -- branch
 						--- DEBUG report "branch";
 						dec2exe_push <= '1'; -- push branch and flush instruction buffer
-						inc_pc <= '0';
 						if2dec_pop <= '0';
 						dec2if_push <= '0';
 						if (blink = '1') then -- branch and link
-							--- DEBUG report "blink";
 							next_state <= LINK;
 						else -- branch and not link
-							--- DEBUG report "branch";
 							next_state <= BRANCH;
 						end if;
 					elsif (mtrans_t = '1') then -- multiple transfer
 						--- DEBUG report "mtrans";
 						-- push one by one
-						inc_pc <= '0';
+						dec2if_push <= '0';
 						dec2exe_push <= '1';
 						if2dec_pop <= '0';
 						next_state <= MTRANS;
 					elsif (mult_t = '1') then -- multiplication (???)
 						--- DEBUG report "mult";
 						-- skiping instruction
-						inc_pc <= '1';
+						dec2if_push <= '1';
 						dec2exe_push <= '1';
 						if2dec_pop <= '1';
 						next_state <= RUN;
@@ -950,16 +963,15 @@ begin
 						--- DEBUG report "other";
 						-- push instruction and inc pc
 						dec2exe_push <= '1';
-						inc_pc <= '1';
 						--- if writing in pc then we must flush the instruction buffer
 						if (alu_dest = x"F" and alu_wb = '1') then
 							--report "going to BRANCH";
 							dec2exe_push <= '1';
-							inc_pc <= '0';
 							if2dec_pop <= '0';
 							dec2if_push <= '0';
 							next_state <= BRANCH;
 						else
+							dec2if_push <= '1';
 							if2dec_pop <= '1';
 							next_state <= RUN;
 						end if;
@@ -969,20 +981,6 @@ begin
 				end if;
 			end if;
 			
-			--- do not increment if fifo full
-			if (dec2if_full = '1') then
-				inc_pc <= '0';
-				-- dec2if_push <= '0';
-			end if;
-			-- elsif ( next_state /= BRANCH )
-			-- 	dec2if_push <= '1';
-			-- end if;
-
-			--- do not push pc if pc is invalid
-			-- if (reg_pcv = '0') then
-			-- 	dec2if_push <= '0';
-			-- end if;
-
 
 --- MTRANS state
 		when MTRANS =>
@@ -995,34 +993,25 @@ begin
 			debug_state <= x"3";
 			--- DEBUG report "switched to BRANCH";
 			dec2exe_push <= '0';
-			if2dec_pop <= '1';
-			
-			if (if2dec_empty = '1') then
-				next_state <= RUN;
+			if (reg_pcv = '1') then
 				dec2if_push <= '1';
+				if2dec_pop <= '1';
+				next_state <= RUN;
 			else
-				dec2if_push <= '0';
+				if2dec_pop <= '0';
+				next_state <= BRANCH;
 			end if;
+			-- if (if2dec_empty = '1') then
+			-- 	dec2if_push <= '1';
+			-- 	next_state <= RUN;
+			-- else
+			-- 	dec2if_push <= '0';
+			-- end if;
 
 		--- LINK state
 		when LINK =>
 			debug_state <= x"4";
-			report "switched to LINK";
-			-- push pc to stack and increment stack
-			--op1 <= reg_pc;
-			--op2 <= x"00000004";
-			--alu_wb <= '0';
-			--flag_wb <= '0';
-			--inval_exe <= '1';
-			--inval_mem <= '1';
-			--inval_czn <= '0';
-			--inval_ovr <= '0';
-			--radr1 <= "1110";
-			--operv <= '1';
-			--pre_index <= '0';
-			--mem_sw <= '1';
-			--alu_cmd <= "00";
-			-- next state
+			blink <= '0';
 			next_state <= BRANCH;
 			
 	end case;
