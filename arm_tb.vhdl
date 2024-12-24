@@ -940,8 +940,8 @@ begin
 	ic_inst <= "1110" & "001" & "1101" & "0" & "1110" & "1110" & "0100" & "11111111";
 	
 	wait until rising_edge(ck) and dec_pop = '1';
-	report "current pc" & vec_to_hex(if_adr); -- 120
-	ic_inst <= "1110" & "101" & "1" & x"040000";
+	report "current pc" & vec_to_hex(if_adr); -- 0x120
+	ic_inst <= "1110" & "101" & "1" & x"003FB5"; -- 0x0001 0000 - 0x0120 - 0x0C
 	--ic_inst <= "1110" & "001" & "1101" & "0" & "0000" & "1111" & "0000" & "11111110";
 
 	wait until rising_edge(ck) and dec_pop = '1';
