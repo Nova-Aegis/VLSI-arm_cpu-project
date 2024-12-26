@@ -288,7 +288,7 @@ architecture sim OF arm_tb is
 
 	signal mem_data			: Std_Logic_Vector(31 downto 0);
 	signal dc_data			: Std_Logic_Vector(31 downto 0) := x"00000000";
-	signal dc_stall			: Std_Logic := '0';
+	signal dc_stall			: Std_Logic := '1';
 	
 
 	signal vdd : bit := '1';
@@ -956,11 +956,6 @@ begin
 
 	
 	wait until rising_edge(ck) and dec_pop = '1';
-	if (if_adr = x"0010012C") then
-		report "end";
-		valid <= '0';
-		wait;
-	end if;
 	report "current pc" & vec_to_hex(if_adr); -- 12C
 	ic_inst <= "1110" & "001" & "1101" & "0" & "1011" & "1011" & "0000" & "10001000";
 
@@ -972,19 +967,65 @@ begin
 	
 	wait until rising_edge(ck) and dec_pop = '1';
 	report "current pc" & vec_to_hex(if_adr);
-	if (if_adr = x"0010012C") then
-		report "end";
-		valid <= '0';
-		wait;
-	end if;
 	ic_inst <= "1110" & "001" & "1101" & "0" & "1001" & "1001" & "0000" & "10001000";
 
+
+	--- DATA TRANSFERS STORE
+	report "DATA TRANSFER STORE " & vec_to_hex(if_adr);
+	wait until rising_edge(ck) and dec_pop = '1'; --- MOV r0, 0x0C
+	ic_inst <= "1110" & "001" & "1101" & "0" & "0000" & "0000" & "0000" & "00001100";
+
+
+	wait until rising_edge(ck) and dec_pop = '1'; --- MOV r1, 0xF0
+	ic_inst <= "1110" & "001" & "1101" & "0" & "0001" & "0001" & "0000" & "11110000";
 	
-	wait until if2dec_empty = '1';
-	report "pushed last instr";
-	wait until rising_edge(ck);
-	wait until rising_edge(ck);
-	valid <= '0';
+	wait until rising_edge(ck) and dec_pop = '1'; --- MOV r2, 0xFF00 0000
+	ic_inst <= "1110" & "001" & "1101" & "0" & "0010" & "0010" & "0100" & "11111111";
+	
+	wait until rising_edge(ck) and dec_pop = '1'; --- OR r2, r2, 0x00EE 0000
+	ic_inst <= "1110" & "001" & "1100" & "0" & "0010" & "0010" & "1000" & "11101110";
+	
+	wait until rising_edge(ck) and dec_pop = '1'; --- SUB r2, r2, 0x0000 CC00
+	ic_inst <= "1110" & "001" & "1100" & "0" & "0010" & "0010" & "1100" & "11001100";
+
+	wait until rising_edge(ck) and dec_pop = '1'; --- SUB r0, r0, 0x0000 0088
+	ic_inst <= "1110" & "001" & "1100" & "0" & "0010" & "0010" & "0000" & "10001000";
+
+	
+	wait until rising_edge(ck) and dec_pop = '1'; --- STR r1, [r0], 0x04 
+	ic_inst <= "1110" & "01" & "001010" & "0000" & "0001" & "000000000100";
+
+	dc_stall <= '0';
+	
+	wait until rising_edge(ck) and dec_pop = '1'; --- STR r1, [r0, 0x04]!
+	ic_inst <= "1110" & "01" & "011010" & "0000" & "0001" & "000000000100";
+	
+	wait until rising_edge(ck) and dec_pop = '1'; --- STR B r2, [r0, 0x01]!
+	ic_inst <= "1110" & "01" & "001110" & "0000" & "0010" & "000000000001";
+	wait until rising_edge(ck) and dec_pop = '1'; --- STR B r2, [r0, 0x01]!
+	ic_inst <= "1110" & "01" & "001110" & "0000" & "0010" & "000000000001";
+	wait until rising_edge(ck) and dec_pop = '1'; --- STR B r2, [r0, 0x01]!
+	ic_inst <= "1110" & "01" & "001110" & "0000" & "0010" & "000000000001";
+	wait until rising_edge(ck) and dec_pop = '1'; --- STR B r2, [r0, 0x01]!
+	ic_inst <= "1110" & "01" & "001110" & "0000" & "0010" & "000000000001";
+
+	--- DATA TRANSFERS LOAD
+	report "DATA TRANSFER LOAD " & vec_to_hex(if_adr);
+	wait until rising_edge(ck) and dec_pop = '1'; --- LDR r3, [r0, 0x04]!
+	ic_inst <= "1110" & "01" & "011011" & "0000" & "0011" & "000000000100";
+	wait until rising_edge(ck) and dec_pop = '1'; --- LDR r3, [r0], 0x04!
+	ic_inst <= "1110" & "01" & "011011" & "0000" & "0011" & "000000000100";
+	wait until rising_edge(ck) and dec_pop = '1'; --- LDR B r3, [r0, 0x01]!
+	ic_inst <= "1110" & "01" & "011111" & "0000" & "0011" & "000000000100";
+	wait until rising_edge(ck) and dec_pop = '1'; --- LDR B r3, [r0, 0x01]!
+	ic_inst <= "1110" & "01" & "011111" & "0000" & "0011" & "000000000001";
+	wait until rising_edge(ck) and dec_pop = '1'; --- LDR B r3, [r0, 0x01]!
+	ic_inst <= "1110" & "01" & "011111" & "0000" & "0011" & "000000000001";
+	wait until rising_edge(ck) and dec_pop = '1'; --- LDR B r3, [r0, 0x01]!
+	ic_inst <= "1110" & "01" & "011111" & "0000" & "0011" & "000000000001";
+	wait until rising_edge(ck) and dec_pop = '1';
+	ic_inst <= "1110" & "001" & "1101" & "0" & "0000" & "0000" & "0000" & "00000000";
+
 	wait;
 	ic_inst <= "1110" & "101" & "1" & x"040000";
 	
@@ -1507,9 +1548,21 @@ begin
 
 	wait;
 	end process;
+
 	process
 	begin
-		wait for 5500 ms;
+		wait until mem_load = '1';
+		dc_data <= x"FF00FF00";
+		wait on mem_adr;
+		dc_data <= x"00FF00FF";
+		wait on mem_adr;
+		dc_data <= x"FEDCBA98";
+		wait;
+	end process;
+	
+	process
+	begin
+		wait for 7000 ms;
 		valid <= '0';
 		wait;
 	end process;

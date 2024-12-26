@@ -617,6 +617,7 @@ begin
 	alu_dest <= "1110" when branch_t = '1' and blink = '1' else
 							"1111" when branch_t = '1' else
 							if_ir(19 downto 16)	when mult_t  = '1' else
+							if_ir(19 downto 16) when trans_t = '1' else
 							if_ir(15 downto 12);
 
 	alu_wb	<= '1' when ((regop_t = '1' and (tst_i = '0' and teq_i = '0' and cmp_i = '0' and cmn_i = '0'))--- DEBUGING --- if_ir(24 downto 21) <= X"7" and if_ir(24 downto 21) >= X"C") -- pas de wb pour TST à CMN
@@ -638,6 +639,7 @@ begin
 
 	-- Rs
 	radr3 <= "1111" when branch_t = '1' and blink = '1' else
+					 if_ir(15 downto 12) when trans_t = '1' and (str_i = '1' or strb_i = '1') else
 					 if_ir(11 downto 8);
 
 -- Reg Invalid
@@ -658,7 +660,7 @@ begin
 										mtrans_rd;
 
 	inval_mem <=	'0' when dec2exe_push = '0' else
-								'1'	when trans_t = '1' or mtrans_t = '1' else
+								'1'	when (trans_t = '1' and (ldr_i = '1' or ldrb_i = '1')) or mtrans_t = '1' else
 								'0';
 
 	inval_czn <= '0' when dec2exe_push = '0' else
@@ -737,8 +739,7 @@ begin
 	shift_val <= if_ir(11 downto 8) & "0" when regop_t = '1' and if_ir(25) = '1' else
 							 if_ir(11 downto 7) when ((regop_t = '1' and if_ir(25) = '0') or
 																				(trans_t = '1' and if_ir(25) = '1')) and if_ir(4) = '0' else
-							 rdata3(4 downto 0) when ((regop_t = '1' and if_ir(25) = '0') or
-																				(trans_t = '1' and if_ir(25) = '1')) and if_ir(4) = '1' else
+							 rdata3(4 downto 0) when regop_t = '1' and if_ir(25) = '0' and if_ir(4) = '1' else
 							 "00000";
 					
 

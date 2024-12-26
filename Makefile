@@ -62,7 +62,7 @@ run_exec : exec
 	$(CC) $(RUNFLAGS) exec_tb --vcd=exec.vcd
 
 run_arm : arm
-	$(CC) $(RUNFLAGS) arm_tb --vcd=arm.vcd --stop-delta=2000
+	$(CC) $(RUNFLAGS) arm_tb --vcd=arm.vcd
 
 
 # The Janitor

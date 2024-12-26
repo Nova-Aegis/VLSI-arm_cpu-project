@@ -1,4 +1,4 @@
-# Notes
+# VHDL
 
 ## REG
 
@@ -16,25 +16,31 @@
 
 ## Branchement
 
- - implémenté
+ - implémenté. Test bench non fini.
 
 ### Delayed slot
 
  - on a 2 delayed slot ce qui peut avoir un impact à la compilation si ce n'est pas le comportement habituelle.
  - Cela peut-être modifié au coût d'un branchement plus long ( opération préalable de $\text{pc} - 8$, donc +2 cycles +3 si modification pc précédament )
- - Le calcul de l'offset lors d'un branch est donc $\text{pc instruction voulue} - \text{pc instruction saut} - \text{0x0C}$. 
+ - Le calcul de l'offset lors d'un branch est donc actuellement : $\text{pc instruction voulue} - \text{pc instruction saut} - \text{0x0C}$. 
 
 ## Accès mémoire
 
- - implémentation incomplète (WIP)
+ - implémenté. Test bench non fini.
+ - On ne peut enchainer les loads au même registre du au conflit de validité présenté dans REG
  - Modification du regsitre pc obligatoirement activé (return)
  
 ## Accès mémoire multiple
 
- - implémentation non faite
+ - implémentation non faite.
+ - compléxité moyenne. Pas encore étudier la question.
 
 ## Multiplication
 
  - implémentation non faite
- - compléxité élevée. Pas encore étudier la question.
+ - compléxité possiblement élevée. Pas encore étudier la question.
  
+# Synthétisation
+
+ - Pas encore faite. En attente d'un test bench suffisament exhaustif ???
+ - Pas encore étudier la question.
