@@ -1025,28 +1025,10 @@ begin
 	ic_inst <= "1110" & "01" & "011111" & "0000" & "0011" & "000000000001";
 	wait until rising_edge(ck) and dec_pop = '1';
 	ic_inst <= "1110" & "001" & "1101" & "0" & "0000" & "0000" & "0000" & "00000000";
-
-	wait;
-	ic_inst <= "1110" & "101" & "1" & x"040000";
-	
-	wait until rising_edge(ck);
-	wait until rising_edge(ck);
-	
-	
-	
-	wait until rising_edge(ck);
 	wait until rising_edge(ck);
 	ic_stall <= '1';
-	wait until rising_edge(ck);
-	wait until rising_edge(ck);
-	wait until rising_edge(ck);
-	wait until rising_edge(ck);
-	wait until rising_edge(ck);
-	wait until rising_edge(ck);
-	wait until rising_edge(ck);
-	valid <= '0';
-	wait;
 
+	wait;
 end process;
 
 process --- Result verification process
