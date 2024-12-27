@@ -2,7 +2,7 @@
 
 ## Banc de registre
 
-Le banc de registres stocke les valeurs des 16 registres du processeur avec le regsitre 15 qui est le programme counter. Celui-ci peu-être incrémenter de 4 sous demande tant qu'il est valide. Chaque registre possède aussi un bit de validité qui définie si le registre va être modifié sous peu. Le banc habrite aussi les 4 bit de flag : negative, zero, carry et overflow. Eux n'ont que 2 bit de flag, un pour l'overflow et l'autre pour les trois restant. La raison pour le bit de validité que pour overflow est qu'il ne sera pas modifié si l'instruction qui met à jour les flag n'est pas une instruction arithmétique.
+Le banc de registres stocke les valeurs des 16 registres du processeur avec le registre 15 qui est le programme counter. Celui-ci peu-être incrémenter de 4 sous demande tant qu'il est valide. Chaque registre possède aussi un bit de validité qui définie si le registre va être modifié sous peu. Le banc habite aussi les 4 bit de flag : negative, zero, carry et overflow. Eux n'ont que 2 bit de flag, un pour l'overflow et l'autre pour les trois restant. La raison pour le bit de validité que pour overflow est qu'il ne sera pas modifié si l'instruction qui met à jour les flag n'est pas une instruction arithmétique.
 
 Nous avons remarqué une potentiel source d'erreur dans notre conception. Si on veux écrire dans un registre avec deux instruction indépendante d'affilé, on peut ce retrouvé avec la première instruction qui écrit mais pas la deuxième car le registre est redevenue valide. Ce cas à été réglé si ces deux écriture se font depuis EXE et qu'elle dure qu'un cycle dans EXE. Cependant dans le cas de load qui ce suive où d'un load puis une instruction EXE, on perd en cohérence.
  - La première instruction va invalidé le registre
@@ -19,8 +19,8 @@ Les condition sont juste un test sur les flags. Chaque instruction test à une c
 ## Opération standard
 
  - implémenté
- - Il est possible de moidifer le PC (registre 15) avec des opération standard (mov, add, sub, and, or, etc...). Ces instruction ce comporteron comme des branchement sans linkage.
- - Il peut-être interessant de le désactivé tout simplement à la compilation ou dans le processeur (ajout d'une condition si regop & wb & wb_adr = 0xF).
+ - Il est possible de modifier le PC (registre 15) avec des opération standard (mov, add, sub, and, or, etc...). Ces instruction ce comporterons comme des branchement sans linkage.
+ - Il peut-être intéressant de le désactivé tout simplement à la compilation ou dans le processeur (ajout d'une condition si `regop & wb & wb_adr = 0xF`).
 
 ### Comment faire
 
@@ -28,7 +28,7 @@ On envoie l'instruction dans EXE. Si le registre de destination est le pc alors 
 
 ### Information supplémentaire
 
-Pour désactivé l'écriture dans le pc, on peut simplement mettre dans cond le fait qu'une oppération standard ne peu avoir comme destination (sauf pour TST, TEQ, CMP et CMN) le pc.
+Pour désactivé l'écriture dans le pc, on peut simplement mettre dans `cond` le fait qu'une opération standard ne peu avoir comme destination (sauf pour TST, TEQ, CMP et CMN) le pc.
 
 ## Branchement
 
@@ -37,7 +37,7 @@ Pour désactivé l'écriture dans le pc, on peut simplement mettre dans cond le 
 ### Delayed slot
 
  - on a 2 delayed slot ce qui peut avoir un impact à la compilation si ce n'est pas le comportement habituelle.
- - Cela peut-être modifié au coût d'un branchement plus long ( opération préalable de $\text{pc} - 8$, donc +2 cycles +3 si modification pc précédament )
+ - Cela peut-être modifié au coût d'un branchement plus long ( opération préalable de $\text{pc} - 8$, donc +2 cycles +3 si modification pc précédemment )
  - Le calcul de l'offset lors d'un branch est donc actuellement : $\text{pc instruction voulue} - \text{pc instruction saut} - \text{0x0C}$. 
  
 ### Comment faire
