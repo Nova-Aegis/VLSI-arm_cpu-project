@@ -5,14 +5,14 @@ TBFLAGS = -e -v
 RUNFLAGS = -r
 
 # vhdl files
-VHDLS_EXEC = FA.vhdl adder32.vhdl alu.vhdl fifo_72b.vhdl exec.vhdl
+VHDLS_EXEC = fa.vhdl adder32.vhdl alu.vhdl fifo_72b.vhdl exec.vhdl
 VHDLS_DECODE = reg.vhdl fifo_127b.vhdl fifo_32b.vhdl decod.vhdl
 VHDLS_IFETCH = fifo_32b.vhdl ifetch.vhdl
 VHDLS_MEM = mem.vhdl
 VHDLS_CHIP = $(VHDLS_EXEC) $(VHDLS_DECODE) $(VHDLS_IFTECH) $(VHDLS_MEM) arm_core.vhdl arm_chip.vhdl
 
 # object files
-OADDER32 = adder32.o
+OADDER32 = adder32.o fa.o
 OALU = alu.o $(OADDER32)
 OSHIFTER = shifter.o
 OFIFO = fifo_72b.o
