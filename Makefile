@@ -72,9 +72,9 @@ run_arm : arm
 	$(CC) $(RUNFLAGS) arm_tb --vcd=arm.vcd
 
 % : %.vhdl
-	vasy -I vhdl -V -o -a -C 8 $< $@
-	boom -V -A -O $@ $@_o
-	boog $@_o $@_done
+	vasy -I vhdl -V -o -a -C 8 $< $@.vbe
+	boom -V -A -O $@.vbe $@_o.vbe
+	boog $@_o.vbe $@
 
 synthesis : $(VHDLS_CHIP:.vhdl=)
 
