@@ -73,6 +73,8 @@ run_arm : arm
 
 % : %.vhdl
 	vasy -I vhdl -V -o -a -C 8 $< $@
+	boom -V -A -O $@ $@_o
+	boog $@_o $@_done
 
 synthesis : $(VHDLS_CHIP:.vhdl=)
 
