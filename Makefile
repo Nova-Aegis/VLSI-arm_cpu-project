@@ -4,6 +4,13 @@ CFLAGS = -a -v
 TBFLAGS = -e -v
 RUNFLAGS = -r
 
+# vhdl files
+VHDLS_EXEC = FA.vhdl adder32.vhdl alu.vhdl fifo_72b.vhdl exec.vhdl
+VHDLS_DECODE = reg.vhdl fifo_127b.vhdl fifo_32b.vhdl decod.vhdl
+VHDLS_IFETCH = fifo_32b.vhdl ifetch.vhdl
+VHDLS_MEM = mem.vhdl
+VHDLS_CHIP = $(VHDLS_EXEC) $(VHDLS_DECODE) $(VHDLS_IFTECH) $(VHDLS_MEM) arm_core.vhdl arm_chip.vhdl
+
 # object files
 OADDER32 = adder32.o
 OALU = alu.o $(OADDER32)
@@ -15,30 +22,30 @@ ODECODE = $(OREG) $(OFIFO) decod.o fifo_32b.o fifo_127b.o
 OARM = $(ODECODE) $(OEXEC) ifetch.o mem.o
 
 
-.PHONY : all exec adder32 alu shifter fifo arm run_fifo run_adder32 run_alu run_shifter run_exec run_arm clean
+.PHONY : all exec_tb adder32_tb alu_tb shifter_tb fifo_tb arm_tb run_fifo run_adder32 run_alu run_shifter run_exec run_arm clean
 
 # MOAB (Mother Of All Binaries)
-all: alu shifter exec adder32 fifo arm
+all: alu_tb shifter_tb exec_tb adder32_tb fifo_tb arm_tb
 
 # Test Bench maker
-exec : $(OEXEC) exec_tb.o
+exec_tb : $(OEXEC) exec_tb.o
 	$(CC) $(TBFLAGS) exec_tb
 
-adder32 : $(OADDER32) adder32_tb.o
+adder32_tb : $(OADDER32) adder32_tb.o
 	$(CC) $(TBFLAGS) adder32_tb
 
-alu: $(OALU) alu_tb.o
+alu_tb : $(OALU) alu_tb.o
 	$(CC) $(TBFLAGS) alu_tb
 
-shifter: $(OSHIFTER) shifter_tb.o
+shifter_tb : $(OSHIFTER) shifter_tb.o
 	$(CC) $(TBFLAGS) shifter_tb
 
-fifo : $(OFIFO) fifo_72b_tb.o
+fifo_tb : $(OFIFO) fifo_72b_tb.o
 	$(CC) $(TBFLAGS) fifo_72b_tb
 
-decode : $(ODECODE)
+decode_tb : $(ODECODE)
 
-arm : $(OARM) arm_tb.o
+arm_tb : $(OARM) arm_tb.o
 	$(CC) $(TBFLAGS) arm_tb
 
 # Object file maker
@@ -64,6 +71,10 @@ run_exec : exec
 run_arm : arm
 	$(CC) $(RUNFLAGS) arm_tb --vcd=arm.vcd
 
+% : %.vhdl
+	vasy -I vhdl -V -o -a -C 8 $< $@
+
+synthesis : $(VHDLS_CHIP:.vhdl=)
 
 # The Janitor
 clean:
