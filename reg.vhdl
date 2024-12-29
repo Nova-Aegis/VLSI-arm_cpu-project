@@ -74,7 +74,9 @@ architecture Behavior OF Reg is
 			B : in Std_Logic_Vector(31 downto 0);
 			cin		: in Std_Logic;
 			cout	: out Std_Logic;
-			S : out Std_Logic_Vector(31 downto 0)
+			S : out Std_Logic_Vector(31 downto 0);
+			vdd : in bit;
+			vss : in bit
 		);
 	end component;
 
@@ -436,7 +438,9 @@ begin
 			B => x"00000004",
 			cin => '0',
 			cout => open,
-			S => pc_upd
+			S => pc_upd,
+			vdd => vdd,
+			vss => vss
 		);
 	
 

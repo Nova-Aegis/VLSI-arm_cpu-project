@@ -26,7 +26,9 @@ architecture dataflow of Alu is
 		B : in std_logic_vector(31 downto 0);
 		Cin : in std_logic;
 		Cout : out std_logic;
-		S : out std_logic_vector(31 downto 0)
+		S : out std_logic_vector(31 downto 0);
+		vdd : in bit;
+		vss : in bit
 	);
 	end component;
 	
@@ -42,7 +44,9 @@ architecture dataflow of Alu is
 			B => op2,
 			Cin => cin,
 			Cout => res_add_cout,
-			S => res_add
+			S => res_add,
+			vdd => vdd,
+			vss => vss
 		);
 
     with cmd select res_tmp <=
