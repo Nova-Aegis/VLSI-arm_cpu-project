@@ -1,58 +1,55 @@
 library ieee;
 use ieee.std_logic_1164.all;
+-- use ieee.numeric_std.all;
 
-entity Add4b is
+
+entity Add32b is
 port (
-	A : in std_logic_vector(3 downto 0);
-	B : in std_logic_vector(3 downto 0);
+	A : in std_logic_vector(31 downto 0);
+	B : in std_logic_vector(31 downto 0);
 	Cin : in std_logic;
 	Cout : out std_logic;
-	S : out std_logic_vector(3 downto 0)
+	S : out std_logic_vector(31 downto 0);
+	vdd : in bit;
+	vss : in bit
 );
 
-end Add4b;
+end Add32b;
 
-architecture Structurel of Add4b is
+architecture Structurel of Add32b is
 
+	-- signal res : std_logic_vector(32 downto 0);
+
+	-- begin
+	-- 	res <= std_logic_vector( unsigned("0" & A) + unsigned("0" & B) + unsigned'("" & cin)); 
+	-- 	Cout <= res(32);
+	-- 	S <= res(31 downto 0);
+
+	
 	component FAdder
-	port (
-		A, B, Cin : in std_logic;
-		Sout, Cout : out std_logic);
+		port (
+			A, B, Cin : in std_logic;
+			Sout, Cout : out std_logic;
+			vdd : in bit;
+			vss : in bit
+			);
 	end component;
 
-	signal C1, C2, C3 : std_logic;
+	signal C : std_logic_vector(32 downto 0);
 
-	begin
-		FA_0 : FAdder
-		port map(
-			A => A(0),
-			B => B(0),
-			Cin => Cin,
-			Sout => S(0),
-			Cout => C1
-		);
-		FA_1 : FAdder
-		port map(
-			A => A(1),
-			B => B(1),
-			Cin => C1,
-			Sout => S(1),
-			Cout => C2
-		);
-		FA_2 : FAdder
-		port map(
-			A => A(2),
-			B => B(2),
-			Cin => C2,
-			Sout => S(2),
-			Cout => C3
-		);
-		FA_3 : FAdder
-		port map(
-			A => A(3),
-			B => B(3),
-			Cin => C3,
-			Sout => S(3),
-			Cout => Cout
-		);
+begin
+	gen : for i in 0 to 31 generate
+		FA_all: FAdder
+			port map(
+				A => A(i),
+				B => B(i),
+				Cin => C(i),
+				Sout => S(i),
+				Cout => C(i+1),
+				vdd => vdd,
+				vss => vss
+				);
+	end generate;
+	C(0) <= Cin;
+	Cout <= C(32);
 end Structurel;

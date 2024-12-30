@@ -5,7 +5,7 @@ TBFLAGS = -e -v
 RUNFLAGS = -r
 
 # vhdl files
-VHDLS_EXEC = fa.vhdl adder32.vhdl alu.vhdl fifo_72b.vhdl exec.vhdl
+VHDLS_EXEC = fa.vhdl adder.vhdl alu.vhdl fifo_72b.vhdl exec.vhdl
 VHDLS_DECODE = reg.vhdl fifo_127b.vhdl fifo_32b.vhdl decod.vhdl
 VHDLS_IFETCH = fifo_32b.vhdl ifetch.vhdl
 VHDLS_MEM = mem.vhdl
