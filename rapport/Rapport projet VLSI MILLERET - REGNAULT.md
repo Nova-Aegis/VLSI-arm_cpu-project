@@ -147,7 +147,7 @@ Le test bench du shifter contient des tests pour les 5 opérations (LSL, LSR? AS
 
 Le test bench de l'ALU contient des tests pour les 4 opérations (ADD, AND, OR et XOR) pour des valeurs aléatoires et des cas extrêmes. Nous avons également testé le bon fonctionnement des flags.
 
-Pour tester EXE, nous avons envoyé artificiellement des instructions décodées à EXE (comme si elles venaient de DECOD). Le test est cadencé par une horloge. On vérifie la sortie de EXE vers REG (valeurs des signaux, par exemple par rapport à write back) ou MEM (adresse, data, indications pour MEM). On vérifie également l'état des FIFO qui relient EXE à DECOD et MEM (contenu, entrées et sorties) avant et après avoir pop/push dessus.
+Pour tester EXE, nous avons envoyé artificiellement des instructions décodées à EXE (comme si elles venaient de DECOD). Le test est cadencé par une horloge. On vérifie la sortie de EXE vers REG (valeurs des signaux, par exemple par rapport à write-back) ou MEM (adresse, data, indications pour MEM). On vérifie également l'état des FIFO qui relient EXE à DECOD et MEM (contenu, entrées et sorties) avant et après avoir pop/push dessus.
 
 ## L'étage DECOD
 
@@ -176,111 +176,112 @@ MEM et EXE peuvent produire simultanément un résultat. En cas de conflit (les 
 
 Le registre 15 (PC) est un registre particulier. On lui associe un opérateur réalisant l'opération +4 et son contenu et sa validité sont accessibles directement via l'interface de REG. On remarque ici que le calcul de l'instruction suivante se fait dans DECOD.
 
-Schéma de REG (cf. fichier SVG pour zoomer) : ???
+Schéma de REG (cf. fichier SVG pour zoomer) :
+
+![[MU4IN101_rapport-schema-REG.svg]]
 
 ### Machine à états
 
 DECOD repose sur une machine à états cadencé par l'horloge globale du processeur.
 
-??? TP 7
+??? TP 7 blablater
 
-Schéma de l'automate de DECOD : ???
+Schéma de l'automate de DECOD :
+
+![[MU4IN101_rapport-automate-DECOD.svg]]
 
 #### Etat FETCH
 
-?DONE?
+On est dans l'état FETCH lorsqu'on attend une instruction à traiter. On attend que le buffer d'instructions ne soit plus vide et que le PC soit valide.
 
-Dans l'état FETCH on attend que le buffer d'instruction ne soit plus vide et que le pc soit valide.
-
-- T1 : (FETCH -> RUN) dec2if\_full = '1' and reg\_pcv = '1' ; Si on a des instruction et que le pc est valide.
-- T2 : (FETCH -> FETCH) else
+| Transition | Etats            | Condition en VHDL                     | Explications                               |
+| ---------- | ---------------- | ------------------------------------- | ------------------------------------------ |
+| T1         | (FETCH -> RUN)   | dec2if\_full = '1' and reg\_pcv = '1' | On a des instructions et le PC est valide. |
+| T2         | (FETCH -> FETCH) | else                                  |                                            |
 
 #### Etat RUN
 
-?DONE?
+Le rôle de cet état est de décoder l'instruction entrante et de l'exécuter si rien de spécial n'est nécessaire.
 
-Le rôle de cette état est de décoder l'instruction entrante et de l'exécuter si rien de spéciale n'est nécessaire.
-
-- T1 : (RUN -> RUN) if2dec_empty = '1' and if2dec_pop = '0' ; Cas où l'on n'as pas envoyer d'adresse d'instruction.
-- T2 : (RUN -> RUN) condv = '0' or operv = '0' or ( dec2exe_full = '1' and exe_pop = '0' ) ; Si les opérandes ou flags ne sont pas valide ou si l'on ne peut pas push l'instruction que l'on va décoder.
-- T3 : (RUN -> RUN) cond = '0' ; Si l'instruction n'est pas valide (condition d'exécution).
-- T4 : (RUN -> LINK) branch_t = '1' and blink = '1' ; L'instruction est un branch and link.
-- T5 : (RUN -> BRANCH) branch_t = '0' and blink = '0' ; L'instruction est un branchement.
-- T6 : (RUN -> MTRANS) mtrans_t = '1' ; L'instruction est un transfer multiple.
-- T7 : (RUN -> BRANCH) ( alu_dest = x"F" and alu_wb = '1') or ( ld_dest = x"F" and ( mem_lw = '1' or mem_lb = '1' )) ; Tout les cas où une autre instruction agis sur le registre pc. (Ne devrais arriver en aucun cas sauf pour un load word pour faire un return).
-- T8 : (RUN -> RUN) else ; Une instruction standard (mult, load, store, regular operation, swap).
+| Transition | Etats           | Condition en VHDL                                                                             | Explications                                                                                                                                                                     |
+| ---------- | --------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T1         | (RUN -> RUN)    | if2dec_empty = '1' and if2dec_pop = '0'                                                       | Cas où on n'a pas envoyé d'adresse d'instruction ??? demander précision à Guillaume                                                                                              |
+| T2         | (RUN -> RUN)    | condv = '0' or operv = '0' or ( dec2exe_full = '1' and exe_pop = '0' )                        | Les opérandes ou les flags ne sont pas valides ou on ne peut pas push l'instruction que l'on va décoder.                                                                         |
+| T3         | (RUN -> RUN)    | cond = '0'                                                                                    | L'instruction n'est pas valide (condition d'exécution).                                                                                                                          |
+| T4         | (RUN -> LINK)   | branch_t = '1' and blink = '1'                                                                | L'instruction est un branch and link.                                                                                                                                            |
+| T5         | (RUN -> BRANCH) | branch_t = '0' and blink = '0'                                                                | L'instruction est un branchement.                                                                                                                                                |
+| T6         | (RUN -> MTRANS) | mtrans_t = '1'                                                                                | L'instruction est un transfert multiple.                                                                                                                                         |
+| T7         | (RUN -> BRANCH) | ( alu_dest = x"F" and alu_wb = '1') or ( ld_dest = x"F" and ( mem_lw = '1' or mem_lb = '1' )) | Tous les cas où une autre instruction agit sur le registre PC. (Ne devrait arriver en aucun cas sauf pour un load word pour faire un return. ??? demander précision à Guillaume) |
+| T8         | (RUN -> RUN)    | else                                                                                          | C'est une instruction standard (mult, load, store, regular operation, swap).                                                                                                     |
 
 #### Etat LINK
 
-?DONE?
+Cet état vient du fait que l'on sauvegarde le PC (dans le Link Register) avant de le modifier. Il ne sert qu'à enlever le flag de link avant de laisser le décodage envoyer l'instruction de modification de PC.
 
-Cette état vient du fait que l'on va sauvegarder le pc avant de le modifier. Il ne sert qu'à enlever le flag de link pour laisser le décodage envoyer l'instruction de modification de pc.
-
-- T1 : (LINK -> BRANCH) toujours
+| Transition | Etats            | Condition en VHDL | Explications |
+| ---------- | ---------------- | ----------------- | ------------ |
+| T1         | (LINK -> BRANCH) | aucune            | toujours     |
 
 #### Etat BRANCH
 
-?DONE?
+On attend dans cet état que le PC redevienne valide et que les buffers d'instruction et d'adresse soient vides.
 
-Ici, on attend que le pc redevienne valide et que les buffers d'instruction et d'adresse soit vide.
-
-- T1 : (BRANCH -> RUN) reg_pcv = '1' and if2dec_empty = '1' and dec2if_empty = '1' ; tout les buffers on été purgé et le pc est valide
-- T2 : (BRANCH -> BRANCH) else
+| Transition | Etats              | Condition en VHDL                                           | Explications                                         |
+| ---------- | ------------------ | ----------------------------------------------------------- | ---------------------------------------------------- |
+| T1         | (BRANCH -> RUN)    | reg_pcv = '1' and if2dec_empty = '1' and dec2if_empty = '1' | Tous les buffers ont été purgés et le PC est valide. |
+| T2         | (BRANCH -> BRANCH) | else                                                        |                                                      |
 
 #### Etat MTRANS
 
-?DONE?
+Cet état sert pour les transferts multiples. Il n'est actuellement pas fonctionnel dans notre projet et renvoie juste à l'état RUN.
 
-Cette état est sensé s'occuper des transfer multiple. Il n'est actuellement pas fonctionelle et renvoie juste à l'etat RUN.
+Voici les conditions théoriques de changement d'état :
 
-Ici sont les condition théorique de changement d'état.
-
-- T1 : (MTRANS -> MTRANS) mtrans_list != x"0" ; On transfer encore des registres.
-- T2 : (MTRANS -> BRANCH) mtrans_list = x"F" and ldm_i = '1' ; On a modifié le registre pc.
-- T3 : (MTRANS -> RUN) else ; On a fini tout les registres et le pc n'a pas été modifié.
+| Transition | Etats              | Condition en VHDL                  | Explications                                                 |
+| ---------- | ------------------ | ---------------------------------- | ------------------------------------------------------------ |
+| T1         | (MTRANS -> MTRANS) | mtrans_list != x"0"                | Il reste des registres à transférer.                         |
+| T2         | (MTRANS -> BRANCH) | mtrans_list = x"F" and ldm_i = '1' | On a modifié le registre PC.                                 |
+| T3         | (MTRANS -> RUN)    | else                               | On a traité tous les registres et le PC n'a pas été modifié. |
 
 ### Idées pour les transferts multiples
 
-?DONE?
+Nous n'avons pas réussi à implémenter les transferts multiples. Ce paragraphe explique comment on pourrait les gérer.
 
-Bouclé dans l'état MTRANS. Tant que la mtrans_list n'est pas égale à x"0" ou x"F", on lance un store/load word du plus petit registre de la list. Puis on le supprime une fois le tic d'horloge passé. Dans le cas ou mtrans_list = x"F" et que ldm_i = '1', il faut au tic d'horloge passé sur l'etat BRANCH car le registre de pc est invalide et va être modifié. Dans le cas contraire, retourner à RUN à la fin.
-Une autre problématique s'élève si on à pas de write back. Dans ce cas l'idée est de au préalable gardé dans un registre intern la valeur du registre base. Si on le modifie par un load dans l'instruction alors il n'est pas gardé. Dans le cas où on n'a pas de write-back il faut le remetre dans sont regsitre (instruction or rx, 0) avant de lire la prochaine instruction. Cela permet d'ignorer le flag write back jusqu'a la fin de l'instruction.
+Si l'instruction est un transfert multiple, la machine à états nous amène à l'état MTRANS. On boucle dans l'état MTRANS. Tant que la mtrans_list n'est pas égale à x"0" ou x"F", on lance un load/store word du plus petit registre de la liste. Puis on le supprime une fois le tick d'horloge passé.
+Dans le cas ou mtrans_list = x"F" et que ldm_i = '1', il faut passer à l'état BRANCH au moment du tick d'horloge car le registre de PC est invalide et va être modifié. Dans le cas contraire, on retourne à RUN à la fin.
+
+Une autre problématique s'élève si on n'a pas de write-back. Dans ce cas l'idée est d'enregistrer au préalable la valeur du registre base dans un registre interne. Si on le modifie par un load dans l'instruction, alors il n'est pas gardé. Dans le cas où on n'a pas de write-back, il faut le remettre dans sont registre (instruction or rx, 0) avant de lire la prochaine instruction. Cela permet d'ignorer le flag write-back jusqu'à la fin de l'instruction. ??? demander précision à Guillaume
 
 ### Test bench de DECOD
 
 Comme pour EXE, nous avons testé séparément REG pour simplifier le test bench de DECOD.
 
-Le test bench de REG ???
+Le test bench de REG ??? blablater
 
-??? test bench de DECOD
+Nous testons DECOD directement dans le test bench du processeur. On vérifie que les entrées et sorties de DECOD sont celles attendues.
+Le test bench du processeur s'occupe de simuler la RAM sauf que l'on envoie des mots sans se soucier des adresses liées.
 
-?DONE?
-
-Le banc de registre à déjà été testé. Quand à DECOD, nous testont les entrées et sortie de celui-ci dans le test bench du processeur (le test bench s'occupe de simuler la RAM sauf que l'on envoie des mots sans se soucier des adresses lié).
-Nous avons testé chaque instruction d'opération standard, chaque condition d'exécution (valide et pas valide), ainsi que les instructions de branchement et d'accès mémoire simple.
-
-
-#### Test d'instructions arithmétiques et logiques
-
-???
-
-#### Test de branchement
-
-???
-
-#### Test d'accès mémoire simple
-
-???
-
-#### Test de programme : somme d'un vecteur
-
-?DONE? note : Pour pimenter je pensais faire un programm qui fait $\sum{2*x[i]}_{i = 0}^{9}$ Comme cela on test aussi le shifter. Si je suis assez fous peut-être uniquement si $x[i]$ est impaire ou positive.
-
-???
+Nous avons testé chaque instruction d'opération standard, chaque condition d'exécution (valide et pas valide) ainsi que les instructions de branchement et d'accès mémoire simple.
 
 ## Plateforme globale
 
-??? tests réalisés par Guillaume
+??? demander à Guillaume comment fonctionne la plateforme globale
+
+### Test d'instructions arithmétiques et logiques
+
+???
+
+### Test de branchement
+
+???
+
+### Test d'accès mémoire simple
+
+???
+
+### Test de programme : somme d'un vecteur
+
+??? note : Pour pimenter je pensais faire un programm qui fait $\sum{2*x[i]}_{i = 0}^{9}$ Comme cela on test aussi le shifter. Si je suis assez fous peut-être uniquement si $x[i]$ est impaire ou positive.
 
 ## Conclusion
 
