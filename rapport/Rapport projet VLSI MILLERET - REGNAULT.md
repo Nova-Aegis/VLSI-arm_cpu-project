@@ -183,7 +183,15 @@ Schéma de REG (cf. fichier SVG pour zoomer) :
 
 ### Machine à états
 
-DECOD repose sur une machine à états cadencée par l'horloge globale du processeur.
+Le contrôle du flot d'instructions par DECOD repose sur une machine à états et suit une unique séquence, parfois incomplète selon l'instruction à exécuter :
+1. envoyer l'adresse d'une instruction dans la FIFO dec2if ;
+2. lire l'instruction chargée par IFETCH et stockée dans la FIFO if2dec ;
+3. décoder l'instruction chargée ;
+4. écrire le résultat du décodage dans la FIFO dec2exec à destination de EXE.
+
+La machine à états contrôle ainsi la lecture et l'écriture dans les FIFO dec2if, if2dec et dec2exec grâce à 3 signaux : dec2if_push, if2dec_pop (port dec_pop) et dec2exe_push.
+
+Les branchements et les transferts multiples doivent être traités en plusieurs cycles.
 
 <div style="page-break-after: always"></div>
 
@@ -193,7 +201,7 @@ Schéma de l'automate de DECOD :
 
 #### Etat FETCH
 
-On est dans l'état FETCH lorsqu'on attend une instruction à traiter. On attend que le buffer d'instructions ne soit plus vide et que le PC soit valide.
+C'est l'état de démarrage (après reset). On est dans l'état FETCH lorsqu'on attend une instruction à traiter. On attend que le buffer d'instructions ne soit plus vide et que le PC soit valide.
 
 | Transition | Etats            | Condition en VHDL                     | Explications                               |
 | ---------- | ---------------- | ------------------------------------- | ------------------------------------------ |
@@ -229,7 +237,7 @@ Cet état vient du fait que l'on sauvegarde le PC (dans le Link Register) avant 
 
 #### Etat BRANCH
 
-On attend dans cet état que le PC redevienne valide et que les buffers d'instruction et d'adresse soient vides.
+On attend dans cet état que le PC redevienne valide et que les buffers d'instruction et d'adresse soient vides. Il purge l'instruction suivant un branchement pris.
 
 | Transition | Etats              | Condition en VHDL                                           | Explications                                         |
 | ---------- | ------------------ | ----------------------------------------------------------- | ---------------------------------------------------- |
