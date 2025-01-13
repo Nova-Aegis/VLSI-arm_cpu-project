@@ -8,7 +8,6 @@ Sorbonne Université Master Informatique Semestre 1 09/2024 - 01/2025 </div>
 %%
 SVG à joindre au rendu :
 - MU4IN101_rapport-schema-EXE.svg
-- MU4IN101_rapport-schema-DECOD.svg
 - MU4IN101_rapport-schema-REG.svg
 %%
 
@@ -161,7 +160,7 @@ Comme l'architecture du processeur est asynchrone, il faut gérer la synchronisa
 
 Le registre de destination de l'instruction est marqué comme non valide lors du lancement de l'instruction. Le registre de destination repasse à valide lorsque le résultat de l'instruction est disponible. Avec la contrainte qu'une instruction ne peut être lancée que si son registre de destination est valide, ce mécanisme permet de maintenir l'ordre des affectations (instructions) pour un registre donné.
 
-Schéma global de l'étage DECOD (cf. fichier SVG pour zoomer) : ???
+<div style="page-break-after: always"></div>
 
 ### Banc de registres REG
 
@@ -176,15 +175,17 @@ MEM et EXE peuvent produire simultanément un résultat. En cas de conflit (les 
 
 Le registre 15 (PC) est un registre particulier. On lui associe un opérateur réalisant l'opération +4 et son contenu et sa validité sont accessibles directement via l'interface de REG. On remarque ici que le calcul de l'instruction suivante se fait dans DECOD.
 
+<div style="page-break-after: always"></div>
+
 Schéma de REG (cf. fichier SVG pour zoomer) :
 
 ![[MU4IN101_rapport-schema-REG.svg]]
 
 ### Machine à états
 
-DECOD repose sur une machine à états cadencé par l'horloge globale du processeur.
+DECOD repose sur une machine à états cadencée par l'horloge globale du processeur.
 
-??? TP 7 blablater
+<div style="page-break-after: always"></div>
 
 Schéma de l'automate de DECOD :
 
@@ -199,20 +200,24 @@ On est dans l'état FETCH lorsqu'on attend une instruction à traiter. On attend
 | T1         | (FETCH -> RUN)   | dec2if\_full = '1' and reg\_pcv = '1' | On a des instructions et le PC est valide. |
 | T2         | (FETCH -> FETCH) | else                                  |                                            |
 
+<div style="page-break-after: always"></div>
+
 #### Etat RUN
 
 Le rôle de cet état est de décoder l'instruction entrante et de l'exécuter si rien de spécial n'est nécessaire.
 
-| Transition | Etats           | Condition en VHDL                                                                             | Explications                                                                                                                                                                     |
-| ---------- | --------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T1         | (RUN -> RUN)    | if2dec_empty = '1' and if2dec_pop = '0'                                                       | Cas où on n'a pas envoyé d'adresse d'instruction ??? demander précision à Guillaume                                                                                              |
-| T2         | (RUN -> RUN)    | condv = '0' or operv = '0' or ( dec2exe_full = '1' and exe_pop = '0' )                        | Les opérandes ou les flags ne sont pas valides ou on ne peut pas push l'instruction que l'on va décoder.                                                                         |
-| T3         | (RUN -> RUN)    | cond = '0'                                                                                    | L'instruction n'est pas valide (condition d'exécution).                                                                                                                          |
-| T4         | (RUN -> LINK)   | branch_t = '1' and blink = '1'                                                                | L'instruction est un branch and link.                                                                                                                                            |
-| T5         | (RUN -> BRANCH) | branch_t = '0' and blink = '0'                                                                | L'instruction est un branchement.                                                                                                                                                |
-| T6         | (RUN -> MTRANS) | mtrans_t = '1'                                                                                | L'instruction est un transfert multiple.                                                                                                                                         |
-| T7         | (RUN -> BRANCH) | ( alu_dest = x"F" and alu_wb = '1') or ( ld_dest = x"F" and ( mem_lw = '1' or mem_lb = '1' )) | Tous les cas où une autre instruction agit sur le registre PC. (Ne devrait arriver en aucun cas sauf pour un load word pour faire un return. ??? demander précision à Guillaume) |
-| T8         | (RUN -> RUN)    | else                                                                                          | C'est une instruction standard (mult, load, store, regular operation, swap).                                                                                                     |
+| Transition | Etats           | Condition en VHDL                                                                             | Explications                                                                                                                                              |
+| ---------- | --------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T1         | (RUN -> RUN)    | if2dec_empty = '1' and if2dec_pop = '0'                                                       | Cas où IFETCH n'a pas reçu d'adresse d'instruction (juste pour la sécurité car ce cas ne devrait pas arriver)                                             |
+| T2         | (RUN -> RUN)    | condv = '0' or operv = '0' or ( dec2exe_full = '1' and exe_pop = '0' )                        | Les opérandes ou les flags ne sont pas valides ou on ne peut pas push l'instruction que l'on va décoder.                                                  |
+| T3         | (RUN -> RUN)    | cond = '0'                                                                                    | L'instruction n'est pas valide (condition d'exécution).                                                                                                   |
+| T4         | (RUN -> LINK)   | branch_t = '1' and blink = '1'                                                                | L'instruction est un branch and link.                                                                                                                     |
+| T5         | (RUN -> BRANCH) | branch_t = '0' and blink = '0'                                                                | L'instruction est un branchement.                                                                                                                         |
+| T6         | (RUN -> MTRANS) | mtrans_t = '1'                                                                                | L'instruction est un transfert multiple.                                                                                                                  |
+| T7         | (RUN -> BRANCH) | ( alu_dest = x"F" and alu_wb = '1') or ( ld_dest = x"F" and ( mem_lw = '1' or mem_lb = '1' )) | Cas où une autre instruction qu'un branchement agit sur PC. (Ne devrait arriver en aucun cas sauf lors du return d'une fonction où on fait `MOV PC, LR`.) |
+| T8         | (RUN -> RUN)    | else                                                                                          | C'est une instruction standard (mult, load, store, regular operation, swap).                                                                              |
+
+<div style="page-break-after: always"></div>
 
 #### Etat LINK
 
@@ -250,39 +255,62 @@ Nous n'avons pas réussi à implémenter les transferts multiples. Ce paragraphe
 Si l'instruction est un transfert multiple, la machine à états nous amène à l'état MTRANS. On boucle dans l'état MTRANS. Tant que la mtrans_list n'est pas égale à x"0" ou x"F", on lance un load/store word du plus petit registre de la liste. Puis on le supprime une fois le tick d'horloge passé.
 Dans le cas ou mtrans_list = x"F" et que ldm_i = '1', il faut passer à l'état BRANCH au moment du tick d'horloge car le registre de PC est invalide et va être modifié. Dans le cas contraire, on retourne à RUN à la fin.
 
-Une autre problématique s'élève si on n'a pas de write-back. Dans ce cas l'idée est d'enregistrer au préalable la valeur du registre base dans un registre interne. Si on le modifie par un load dans l'instruction, alors il n'est pas gardé. Dans le cas où on n'a pas de write-back, il faut le remettre dans sont registre (instruction or rx, 0) avant de lire la prochaine instruction. Cela permet d'ignorer le flag write-back jusqu'à la fin de l'instruction. ??? demander précision à Guillaume
+Une autre problématique s'élève si on n'a pas de write-back. Dans ce cas l'idée est d'enregistrer au préalable la valeur du registre base dans un registre interne. Si on le modifie par un load dans l'instruction, alors il n'est pas gardé. Dans le cas où on n'a pas de write-back, on doit rétablir la valeur d'origine du registre sur lequel on a agi avant de lire la prochaine instruction. On utilise la valeur stockée dans le registre interne (instruction `OR rx, 0`).
 
 ### Test bench de DECOD
 
 Comme pour EXE, nous avons testé séparément REG pour simplifier le test bench de DECOD.
 
-Le test bench de REG ??? blablater
+Le test bench de REG vérifie que les registres sont mis à jour au bon moment et renvoie la bonne valeur lorsqu'on les lit.
 
 Nous testons DECOD directement dans le test bench du processeur. On vérifie que les entrées et sorties de DECOD sont celles attendues.
 Le test bench du processeur s'occupe de simuler la RAM sauf que l'on envoie des mots sans se soucier des adresses liées.
 
 Nous avons testé chaque instruction d'opération standard, chaque condition d'exécution (valide et pas valide) ainsi que les instructions de branchement et d'accès mémoire simple.
 
+<div style="page-break-after: always"></div>
+
 ## Plateforme globale
 
-??? demander à Guillaume comment fonctionne la plateforme globale
+Nous avons écrit un test bench qui simule le processeur : on instancie et connecte les 4 étages IFETCH, DECOD, EXE et MEM. Le test est cadencé sur une horloge globale. Il y a un processus qui envoie les instructions à tester à IFETCH et un processus qui vérifie les valeurs en sortie de DECOD.
+
+Nous vérifions les valeurs contenues dans les registres de REG grâce à GTKWave.
 
 ### Test d'instructions arithmétiques et logiques
 
-???
+Pour une instruction arithmétique ou logique, nous vérifions la valeur du registre destination et les flags. Pour vérifier les flags set par une instruction, on la fait suivre par un MOV qui met une valeur arbitraire dans un registre. Si les flags sont corrects, le registre contient cette valeur après l'exécution de l'instruction et du MOV. Ce test avec MOV permet aussi de vérifier que les prédicats fonctionnent.
+
+Tous les tests réussissent donc on n'a pas de message d'erreur sur le terminal lorsqu'on exécute le test bench. Voici une capture d'écran de GTKWave :
+
+??? capture d'écran GTKWave + phrase pour dire que tel registre ou signal a la bonne valeur
 
 ### Test de branchement
 
-???
+Pour un branchement, nous vérifions la valeur du registre PC. Nous pouvons également vérifier que le branchement a fonctionné en regardant la valeur de PC dans GTKWave.
+
+??? capture d'écran GTKWave + phrase pour dire que tel registre ou signal a la bonne valeur
 
 ### Test d'accès mémoire simple
 
-???
+Pour un store, nous vérifions que MEM reçoit la bonne valeur à stocker dans la RAM.
+Pour un load, nous vérifions avec GTKWave que le registre contient la bonne valeur.
+
+??? capture d'écran GTKWave + phrase pour dire que tel registre ou signal a la bonne valeur
 
 ### Test de programme : somme d'un vecteur
 
-??? note : Pour pimenter je pensais faire un programm qui fait $\sum{2*x[i]}_{i = 0}^{9}$ Comme cela on test aussi le shifter. Si je suis assez fous peut-être uniquement si $x[i]$ est impaire ou positive.
+note : Pour pimenter je pensais faire un programme qui fait $\sum{2*x[i]}_{i = 0}^{9}$ Comme cela on teste aussi le shifter. Si je suis assez fou peut-être uniquement si $x[i]$ est impaire ou positive.
+
+??? blabla sur ce que vérifie le test + ce que fait le programme
+
+??? code VHDL du test bench
+
+??? capture d'écran GTKWave + phrase pour dire que tel registre ou signal a la bonne valeur
 
 ## Conclusion
 
-??? voir ce qu'a fait Danaël
+Nous avons pu simuler la majeur partie du jeu d'instructions ARM v2.3 sur notre processeur. Il manque juste la multiplication, les transferts multiples et les swaps. Nous avons aussi pu tester un petit programme simple écrit en assembleur.
+
+Le code VHDL constitue la description logique de notre processeur (même s'il manque la gestion des transferts multiples). Avec plus de temps, nous aurions pu faire la synthèse logique puis le placement routage, c'est-à-dire récupérer toutes les cellules logiques qui correspondent à notre description (synthèse) et les placer pour obtenir un schéma des masques (routage).
+
+Ce projet nous a permis d'approfondir nos connaissances sur le fonctionnement et la conception d'un processeur. Nous avons réalisé que la problématique liée à la synchronisation des étages du pipeline était plus complexe à résoudre que ce que nous avions appris auparavant. Il ne suffit pas de découper le processeur en étages à peu près équivalents, il faut aussi gérer les instructions qui prennent plusieurs cycles comme les transferts multiples et les cycles de gel.
