@@ -599,14 +599,13 @@ begin
 
 -- Decode interface operands
 
-	op1 <= reg_pc	when branch_t = '1' and blink = '0' else
-				 x"00000000" when regop_t = '1' and (mov_i = '1' or mvn_i = '1') else
+	op1 <= x"00000000" when regop_t = '1' and (mov_i = '1' or mvn_i = '1') else
 				 rdata1;
 
 	offset32 <=	(31 downto 26 => if_ir(23)) & if_ir(23 downto 0) & "00";
 	-- std_logic_vector(resize(signed(if_ir(23 downto 0) & "00"), 32));
 
-	op2	<= x"00000004" when branch_t = '1' and blink = '1' else
+	op2	<= x"00000007" when branch_t = '1' and blink = '1' else
 				 offset32 		when branch_t = '1' else
 				 x"FFFFFFFF" when mtrans_t = '1' and if_ir(23) = '0' else
 				 x"00000001" when mtrans_t = '1' and if_ir(23) = '1' else
@@ -629,7 +628,7 @@ begin
 
 -- reg read
 	-- Rn
-	radr1 <= "1110" when branch_t = '1' and blink = '1' else
+	radr1 <= "1111" when branch_t = '1' and blink = '1' else
 					 "1111" when branch_t = '1' and blink = '0' else
 					 (if_ir(15 downto 12)) when (mult_t = '1') else
 					 (if_ir(19 downto 16)); -- regop_t, swap_t trans_t, mtrans_t (branch_t pas de Rn)
@@ -638,8 +637,7 @@ begin
 	radr2 <= if_ir(3 downto 0);
 
 	-- Rs
-	radr3 <= "1111" when branch_t = '1' and blink = '1' else
-					 if_ir(15 downto 12) when trans_t = '1' and (str_i = '1' or strb_i = '1') else
+	radr3 <= if_ir(15 downto 12) when trans_t = '1' and (str_i = '1' or strb_i = '1') else
 					 if_ir(11 downto 8);
 
 -- Reg Invalid
@@ -698,20 +696,17 @@ begin
 											 ((regop_t = '1' and ((if_ir(25) = '0' and if_ir(4) = '0') or if_ir(25) = '1')) or
 												(trans_t = '1' and ((if_ir(25) = '1' and if_ir(4) = '0') or if_ir(25) = '0')) or
 												(mtrans_t = '1' or branch_t = '1' or mtrans_t = '1' or mult_t = '1'))
-											 or
-											 (rvalid3 = '1' and branch_t = '1' and blink = '1' and
-												regop_t = '0' and mtrans_t = '0' and mult_t = '0' and trans_t = '0')
 											 )) else
 						'0';
 
 -- Decode to mem interface 
 	ld_dest <= if_ir(15 downto 12) when trans_t = '1' else
 						 mtrans_rd;
-	pre_index <= if_ir(24) or (branch_t and blink);
+	pre_index <= if_ir(24);
 
 	mem_lw <= ldr_i;
 	mem_lb <= ldrb_i;
-	mem_sw <= str_i or (branch_t and blink);
+	mem_sw <= str_i;
 	mem_sb <= strb_i;
 
 -- Shifter command
@@ -746,13 +741,11 @@ begin
 -- Alu operand selection
 	comp_op1	<= '1' when (rsb_i = '1' or rsc_i = '1') else
 							 '0';
-	comp_op2	<=	'1' when (sub_i = '1' or sbc_i = '1' or cmp_i = '1' or bic_i = '1' or mvn_i = '1') else
-								'1' when (branch_t = '1' and blink = '1') else
+	comp_op2	<=	'1' when (sub_i = '1' or sbc_i = '1' or cmp_i = '1' or bic_i = '1' or mvn_i = '1' or blink = '1') else
 								'0';
 
 	alu_cy <=	'1'	when (sub_i = '1' or rsb_i = '1' or cmp_i = '1') else
 						cry when (adc_i = '1' or sbc_i = '1' or rsc_i = '1') else
-						'1'	when (branch_t = '1' and blink = '1') else
 						'0';
 
 -- Alu command
@@ -965,7 +958,7 @@ begin
 						-- push instruction and inc pc
 						dec2exe_push <= '1';
 						--- if writing in pc then we must flush the instruction buffer
-						if (alu_dest = x"F" and alu_wb = '1') then
+						if ((alu_dest = x"F" and alu_wb = '1') or (ld_dest = x"F" and (mem_lw = '1' or mem_lb = '1'))) then
 							--report "going to BRANCH";
 							dec2exe_push <= '1';
 							if2dec_pop <= '0';
@@ -994,7 +987,7 @@ begin
 			debug_state <= x"3";
 			--- DEBUG report "switched to BRANCH";
 			dec2exe_push <= '0';
-			if (reg_pcv = '1' and if2dec_empty = '1' and dec2if_empty = '1') then
+			if (reg_pcv = '1' and if2dec_empty = '1' and dec2if_full = '0') then
 				dec2if_push <= '1';
 				if2dec_pop <= '1';
 				next_state <= RUN;

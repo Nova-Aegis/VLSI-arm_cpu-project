@@ -27,6 +27,8 @@ architecture dataflow of fifo_72b is
   signal fifo_v	: std_logic;
 
 begin
+	
+	process(ck)
   begin
 		if rising_edge(ck) then
 			if reset_n = '0' then
