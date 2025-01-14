@@ -3,6 +3,7 @@
 _start:
 	ldr sp, AdrStack
 	b main
+	b _bad
 
 
 
@@ -19,8 +20,9 @@ main_loop:
 	mov r1, r0
 	mov r2, r0
 	mov r3, r0
-	nop
-	nop
+	b _good
+	b _bad
+	
 
 AdrStack:
 	.word 0x80000000
@@ -37,3 +39,9 @@ AdrTab:
 	.word 0x0a
 AdrTabFin:
 	.word 0x10
+
+
+_bad:
+	add r0, r0, r0
+_good:
+	add r1, r1, r1
