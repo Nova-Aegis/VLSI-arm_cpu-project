@@ -17,7 +17,7 @@ all : $(PROG1) $(PROG2)
 	$(AS_ARM) $(CFLAGS) -g -o $@ -c $^
 
 $(PROG1) : $(PROG1).o
-	$(LD_ARM) $(LD_FLAGS) -T section.lds -g -o $@ $^
+	$(LD_ARM) $(LD_FLAGS) -T sections.lds -g -o $@ $^
 
 $(PROG2) : $(PROG2).o
 	$(LD_ARM) $(LD_FLAGS) -T sections.lds -g -o $@ $^

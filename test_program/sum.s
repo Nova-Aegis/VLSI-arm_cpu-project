@@ -1,23 +1,3 @@
-
-	.data
-AdrStack:
-	.word 0x80000000
-AdrTab:
-	.word 0x01
-	.word 0x02
-	.word 0x03
-	.word 0x04
-	.word 0x05
-	.word 0x06
-	.word 0x07
-	.word 0x08
-	.word 0x09
-	.word 0x0a
-AdrTabFin:
-	.word 0x10
-	
-
-
 	.text
 	.globl _start
 _start:
@@ -42,3 +22,18 @@ main_loop:
 	nop
 	nop
 
+AdrStack:
+	.word 0x80000000
+AdrTab:
+	.word 0x01
+	.word 0x02
+	.word 0x03
+	.word 0x04
+	.word 0x05
+	.word 0x06
+	.word 0x07
+	.word 0x08
+	.word 0x09
+	.word 0x0a
+AdrTabFin:
+	.word 0x10
