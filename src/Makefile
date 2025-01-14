@@ -51,7 +51,7 @@ decode_tb : $(ODECODE)
 arm_tb : $(OARM) arm_tb.o
 	$(CC) $(TBFLAGS) arm_tb
 
-main_tb : $(OARM_CORE) main_tb.o
+main_tb :  ram.o icache.o dcache.o arm_core.o ${C_MOD_DIR}/lib/arm_ghdl.o main_tb.o
 	$(CC) $(TBFLAGS) -Wl,${C_MOD_DIR}/lib/mem.o -Wl,${C_MOD_DIR}/lib/arm_ghdl.o -Wl,${C_MOD_DIR}/ReadElf/lib/ElfObj.o main_tb
 
 # Object file maker
@@ -90,3 +90,20 @@ clean:
 	-rm *.o *.vcd
 	-rm *~
 	-rm alu_tb adder32_tb shifter_tb exec_tb fifo_72b_tb arm_tb main_tb
+
+#######
+ram.o : ram.vhdl
+icache.o : icache.vhdl ram.o
+dcache.o : dcache.vhdl ram.o
+main_tb.o : main_tb.vhdl icache.o dcache.o ram.o 
+arm_core.o : arm_core.vhdl ifetch.o decod.o exec.o mem.o
+ifetch.o : ifetch.vhdl fifo_32b.o
+decod.o : decod.vhdl fifo_32b.o fifo_127b.o reg.o
+reg.o : reg.vhdl 
+exec.o : exec.vhdl fifo_72b.o alu.o shifter.o
+fifo_72b.o : fifo_72b.vhdl
+fifo_32b.o : fifo_32b.vhdl
+fifo_127b.o : fifo_127b.vhdl
+alu.o : alu.vhdl
+shifter.o : shifter.vhdl
+mem.o : mem.vhdl
