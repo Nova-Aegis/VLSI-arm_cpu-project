@@ -15,7 +15,7 @@ SVG à joindre au rendu :
 
 Dans le cadre de l'UE Conception de circuits intégrés numériques, nous avons réalisé en partie un processeur capable de décode et exécuter le jeu d'instructions ARM. Le processeur est décrit à l'aide du langage de description matérielle VHDL.
 
-## Architecture du processeur
+## 1. Architecture du processeur
 
 (Synthèse du Cours 5 : Architecture générale du processeur ARM, détail étage EXE)
 
@@ -67,7 +67,7 @@ Le registre CPSR contient des flags générés par l'ALU et mémorisés si l'ins
 - C : retenue générée par l'ALU dans le cas des instructions arithmétiques et par le shifter dans le cas des instructions logiques
 - V : dépassement de capacité dans le cas d'une opération arithmétique signée
 
-## Jeu d'instructions ARM
+## 2. Jeu d'instructions ARM
 
 Une instruction ARM peut être exécutée ou non selon un prédicat.
 
@@ -97,7 +97,7 @@ Ce type d'instruction correspond à un accès mémoire unique : on lit ou écrit
 
 Ce type d'instruction correspond à le lecture ou l'écriture de plusieurs registres du banc de registres User à la fois. On les utilise pour gérer la pile lors d'appel de fonctions.
 
-## L'étage EXE
+## 3. L'étage EXE
 
 EXE est principalement constitué d'un shifter (décaleur) et d'une ALU. Il s'occupe des calculs arithmétiques et logiques. Cela permet le traitement des instructions arithmétiques et logiques, mais aussi du calcul d'adresse pour les transferts mémoire et les branchements.
 
@@ -148,7 +148,7 @@ Le test bench de l'ALU contient des tests pour les 4 opérations (ADD, AND, OR e
 
 Pour tester EXE, nous avons envoyé artificiellement des instructions décodées à EXE (comme si elles venaient de DECOD). Le test est cadencé par une horloge. On vérifie la sortie de EXE vers REG (valeurs des signaux, par exemple par rapport à write-back) ou MEM (adresse, data, indications pour MEM). On vérifie également l'état des FIFO qui relient EXE à DECOD et MEM (contenu, entrées et sorties) avant et après avoir pop/push dessus.
 
-## L'étage DECOD
+## 4. L'étage DECOD
 
 DECOD contient un banc de registres REG et une machine à états. Il doit assurer deux fonctionnalités :
 - décoder les instructions pour permettre leur exécution par les étages EXE et MEM,
@@ -278,7 +278,7 @@ Nous avons testé chaque instruction d'opération standard, chaque condition d'e
 
 <div style="page-break-after: always"></div>
 
-## Plateforme globale
+## 5. Plateforme globale
 
 Nous avons écrit un test bench qui simule le processeur : on instancie et connecte les 4 étages IFETCH, DECOD, EXE et MEM. Le test est cadencé sur une horloge globale. Il y a un processus qui envoie les instructions à tester à IFETCH et un processus qui vérifie les valeurs en sortie de DECOD.
 
@@ -290,20 +290,20 @@ Pour une instruction arithmétique ou logique, nous vérifions la valeur du regi
 
 Tous les tests réussissent donc on n'a pas de message d'erreur sur le terminal lorsqu'on exécute le test bench. Voici une capture d'écran de GTKWave :
 
-??? capture d'écran GTKWave + phrase pour dire que tel registre ou signal a la bonne valeur
+![[instruction-condition.mod.cropped.png]]
 
 ### Test de branchement
 
 Pour un branchement, nous vérifions la valeur du registre PC. Nous pouvons également vérifier que le branchement a fonctionné en regardant la valeur de PC dans GTKWave.
 
-??? capture d'écran GTKWave + phrase pour dire que tel registre ou signal a la bonne valeur
+![[instruction-branchement-link.mod.cropped.png]]
 
 ### Test d'accès mémoire simple
 
 Pour un store, nous vérifions que MEM reçoit la bonne valeur à stocker dans la RAM.
 Pour un load, nous vérifions avec GTKWave que le registre contient la bonne valeur.
 
-??? capture d'écran GTKWave + phrase pour dire que tel registre ou signal a la bonne valeur
+??? capture d'écran GTKWave
 
 ### Test de programme : somme d'un vecteur
 
@@ -313,7 +313,7 @@ note : Pour pimenter je pensais faire un programme qui fait $\sum{2*x[i]}_{i = 0
 
 ??? code VHDL du test bench
 
-??? capture d'écran GTKWave + phrase pour dire que tel registre ou signal a la bonne valeur
+??? capture d'écran GTKWave
 
 ## Conclusion
 
