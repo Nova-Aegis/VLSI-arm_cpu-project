@@ -3,6 +3,8 @@
 _start:
 	bl main
 	nop
+	mov r10, #TTY_out
+	str r0, [r10]
 	b _good
 	nop
 	b _bad
@@ -38,6 +40,8 @@ AdrTab:
 	.word 0x0a
 AdrTabFin:
 	.word 0x10
+TTY_out:
+	.word 0x00
 
 
 _bad:
