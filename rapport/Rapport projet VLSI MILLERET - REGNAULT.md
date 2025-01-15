@@ -286,8 +286,6 @@ Tous les tests réussissent donc on n'a pas de message d'erreur sur le terminal 
 
 ![[instruction-condition.mod.cropped.png]]
 
-<div style="page-break-after: always"></div>
-
 ### Test de branchement
 
 Pour un branchement, nous vérifions la valeur du registre PC. Nous pouvons également vérifier que le branchement a fonctionné en regardant la valeur de PC dans GTKWave.
@@ -373,6 +371,8 @@ _good:
 	add r1, r1, r1
 ```
 
+<div style="page-break-after: always"></div>
+
 Branch and link sur GTKWave (saut de `_start` vers `main`) :
 
 ![[program-branch-link.mod.cropped.png]]
@@ -386,6 +386,8 @@ Le load est dans la boucle for. La capture d'écran correspond à l'itération 0
 Return sur GTKWave (return du main) :
 
 ![[program-return.mod.cropped.png]]
+
+<div style="page-break-after: always"></div>
 
 Trace dans le terminal :
 
