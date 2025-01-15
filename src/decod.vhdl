@@ -605,7 +605,7 @@ begin
 	offset32 <=	(31 downto 26 => if_ir(23)) & if_ir(23 downto 0) & "00";
 	-- std_logic_vector(resize(signed(if_ir(23 downto 0) & "00"), 32));
 
-	op2	<= x"00000003" when branch_t = '1' and blink = '1' else
+	op2	<= x"00000000" when branch_t = '1' and blink = '1' else
 				 offset32 		when branch_t = '1' else
 				 x"FFFFFFFF" when mtrans_t = '1' and if_ir(23) = '0' else
 				 x"00000001" when mtrans_t = '1' and if_ir(23) = '1' else
@@ -744,7 +744,7 @@ begin
 -- Alu operand selection
 	comp_op1	<= '1' when (rsb_i = '1' or rsc_i = '1') else
 							 '0';
-	comp_op2	<=	'1' when (sub_i = '1' or sbc_i = '1' or cmp_i = '1' or bic_i = '1' or mvn_i = '1' or blink = '1') else
+	comp_op2	<=	'1' when (sub_i = '1' or sbc_i = '1' or cmp_i = '1' or bic_i = '1' or mvn_i = '1') else
 								'0';
 
 	alu_cy <=	'1'	when (sub_i = '1' or rsb_i = '1' or cmp_i = '1') else
