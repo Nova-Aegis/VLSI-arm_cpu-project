@@ -13,7 +13,7 @@ SVG à joindre au rendu :
 
 ## Introduction
 
-Dans le cadre de l'UE Conception de circuits intégrés numériques, nous avons réalisé en partie un processeur capable de décode et exécuter le jeu d'instructions ARM. Le processeur est décrit à l'aide du langage de description matérielle VHDL.
+Dans le cadre de l'UE Conception de circuits intégrés numériques, nous avons réalisé en partie un processeur capable de décoder et exécuter le jeu d'instructions ARM. Le processeur est décrit à l'aide du langage de description matérielle VHDL.
 
 ## 1. Architecture du processeur
 
@@ -36,8 +36,8 @@ Un pipeline doit suivre trois règles :
 
 La progression des instructions dans les étages du pipeline peut être découplée. Cela implique des contraintes dans la gestion de la propagation d'une instruction dans le pipeline.
 
-Par rapport à la règle 2 du pipeline, on ne peut pas se contenter d'un banc de registres simples. À la place, les étages du pipeline sont séparés par des fifos (structure qui respecte l'ordonnancement First In First Out). La progression d'une instruction d'un étage au suivant dépend donc de l'état de la fifo qui sépare les deux étages.
-Dès que la fifo qui alimente un étage n'est pas vide, l'exécution de l'instruction peut commencer.
+Par rapport à la règle 2 du pipeline, on ne peut pas se contenter d'un banc de registres simples. À la place, les étages du pipeline sont séparés par des FIFO (structure qui respecte l'ordonnancement First In First Out). La progression d'une instruction d'un étage au suivant dépend donc de l'état de la FIFO qui sépare les deux étages.
+Dès que la FIFO qui alimente un étage n'est pas vide, c'est-à-dire que la FIFO contient les informations liées à une instruction, l'exécution de cette instruction dans cet étage peut commencer.
 
 ### 4 étages
 
@@ -95,7 +95,7 @@ Ce type d'instruction correspond à un accès mémoire unique : on lit ou écrit
 
 ### Accès mémoire multiples
 
-Ce type d'instruction correspond à le lecture ou l'écriture de plusieurs registres du banc de registres User à la fois. On les utilise pour gérer la pile lors d'appel de fonctions.
+Ce type d'instruction correspond à la lecture ou l'écriture de plusieurs registres du banc de registres User à la fois. On les utilise pour gérer la pile lors d'appel de fonctions.
 
 ## 3. L'étage EXE
 
@@ -117,7 +117,7 @@ Schéma du shifter :
 
 ![[MU4IN101_rapport-schema-shifter.svg]]
 
-cin est la valeur à shifter sur 32 bits. dout est le résultat de l'opération. cin et cout sont les retenues respectivement entrante et sortante. shift_val est un entier sur 4 bits qui correspond à la valeur du shift (0 à 15).
+cin est la valeur à shifter sur 32 bits, dout est le résultat de l'opération, cin et cout sont les retenues respectivement entrante et sortante, shift_val est un entier sur 4 bits qui correspond à la valeur du shift (0 à 15).
 
 ### ALU
 
@@ -140,9 +140,9 @@ Schéma de l'ALU :
 
 ### Test bench de EXE
 
-Le shifter et l'ALU ont été testé séparément pour limiter les tests à faire sur EXE dans sa globalité.
+Le shifter et l'ALU ont été testés séparément pour limiter les tests à faire sur EXE dans sa globalité.
 
-Le test bench du shifter contient des tests pour les 5 opérations (LSL, LSR? ASR, ROR et RRX) pour des valeurs aléatoires.
+Le test bench du shifter contient des tests pour les 5 opérations (LSL, LSR, ASR, ROR et RRX) pour des valeurs aléatoires.
 
 Le test bench de l'ALU contient des tests pour les 4 opérations (ADD, AND, OR et XOR) pour des valeurs aléatoires et des cas extrêmes. Nous avons également testé le bon fonctionnement des flags.
 
@@ -156,7 +156,7 @@ DECOD contient un banc de registres REG et une machine à états. Il doit assure
 
 L'instruction est reçue sous la forme d'un mot de 32 bits. DECOD la convertit en un mot de 127 bits interprétable par EXE et/ou MEM. C'est pourquoi DECOD contient un très grand nombre de signaux qui sont mis à jour selon la machine à états. Les signaux sont regroupés en 4 catégories : décodage des instructions, commande de EXE, commande MEM et séquencement/contrôle du pipeline (interaction avec les FIFO).
 
-Comme l'architecture du processeur est asynchrone, il faut gérer la synchronisation des étages pour une instruction. Une instruction n'est lancée que si toutes ses opérandes sources sont valides et que le registre de destination est valide.
+Comme l'architecture du processeur est asynchrone, il faut gérer la synchronisation des étages pour une instruction. Une instruction n'est lancée que si tous ses opérandes sources sont valides et que le registre de destination est valide.
 
 Le registre de destination de l'instruction est marqué comme non valide lors du lancement de l'instruction. Le registre de destination repasse à valide lorsque le résultat de l'instruction est disponible. Avec la contrainte qu'une instruction ne peut être lancée que si son registre de destination est valide, ce mécanisme permet de maintenir l'ordre des affectations (instructions) pour un registre donné.
 
@@ -274,7 +274,7 @@ Le test bench de REG vérifie que les registres sont mis à jour au bon moment e
 Nous testons DECOD directement dans le test bench du processeur. On vérifie que les entrées et sorties de DECOD sont celles attendues.
 Le test bench du processeur s'occupe de simuler la RAM sauf que l'on envoie des mots sans se soucier des adresses liées.
 
-Nous avons testé chaque instruction d'opération standard, chaque condition d'exécution (valide et pas valide) ainsi que les instructions de branchement et d'accès mémoire simple.
+Nous avons testé chaque instruction d'opération standard, chaque condition d'exécution (valide et non valide) ainsi que les instructions de branchement et d'accès mémoire simple.
 
 <div style="page-break-after: always"></div>
 
@@ -303,21 +303,95 @@ Pour un branchement, nous vérifions la valeur du registre PC. Nous pouvons éga
 Pour un store, nous vérifions que MEM reçoit la bonne valeur à stocker dans la RAM.
 Pour un load, nous vérifions avec GTKWave que le registre contient la bonne valeur.
 
-??? capture d'écran GTKWave
+Pour un exemple d'accès mémoire simple sur GTKWave, voir le test de programme qui suit.
 
 ### Test de programme : somme d'un vecteur
 
-note : Pour pimenter je pensais faire un programme qui fait $\sum{2*x[i]}_{i = 0}^{9}$ Comme cela on teste aussi le shifter. Si je suis assez fou peut-être uniquement si $x[i]$ est impaire ou positive.
+Nous avons testé la plateforme globale avec un programme simple : la somme des éléments d'un tableau.
 
-??? blabla sur ce que vérifie le test + ce que fait le programme
+Programme en C :
 
-??? code VHDL du test bench
+```C
+int tab[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
-??? capture d'écran GTKWave
+int main() {
+	int sum = 0;
+	int * ptr;
+	for (ptr = tab; ptr < &tab[10]; ptr++) {
+		sum = sum + (*ptr);
+	}
+	return sum;
+}
+```
+
+<div style="page-break-after: always"></div>
+
+Traduction manuelle en assembleur :
+
+```arm-asm
+	.text
+	.globl _start
+_start:
+	bl main
+	nop
+	b _good
+	nop
+	b _bad
+
+
+main:
+	mov r1, #0
+	mov r4, #AdrTab
+	mov r5, #AdrTabFin
+main_loop:
+	ldr r6, [r4], #4
+	add r1, r1, r6
+	cmp r4, r5
+	bne main_loop
+	nop
+
+	mov r0, r1
+	mov pc, lr
+	mov r0, r0
+	b _bad
+	mov r0, r0
+	
+AdrTab:
+	.word 0x01
+	.word 0x02
+	.word 0x03
+	.word 0x04
+	.word 0x05
+	.word 0x06
+	.word 0x07
+	.word 0x08
+	.word 0x09
+	.word 0x0a
+AdrTabFin:
+	.word 0x10
+
+
+_bad:
+	add r0, r0, r0
+_good:
+	add r1, r1, r1
+```
+
+Branch and link sur GTKWave :
+
+![[program-branch-link.mod.cropped.png]]
+
+Load avec postindex sur GTKWave :
+
+![[program-load-postindex.mod.cropped.png]]
+
+Return sur GTKWave :
+
+![[program-return.mod.cropped.png]]
 
 ## Conclusion
 
-Nous avons pu simuler la majeur partie du jeu d'instructions ARM v2.3 sur notre processeur. Il manque juste la multiplication, les transferts multiples et les swaps. Nous avons aussi pu tester un petit programme simple écrit en assembleur.
+Nous avons pu simuler la majeure partie du jeu d'instructions ARM v2.3 sur notre processeur. Il manque juste la multiplication, les transferts multiples et les swaps. Nous avons aussi pu tester un petit programme simple écrit en assembleur.
 
 Le code VHDL constitue la description logique de notre processeur (même s'il manque la gestion des transferts multiples). Avec plus de temps, nous aurions pu faire la synthèse logique puis le placement routage, c'est-à-dire récupérer toutes les cellules logiques qui correspondent à notre description (synthèse) et les placer pour obtenir un schéma des masques (routage).
 
