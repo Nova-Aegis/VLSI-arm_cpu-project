@@ -91,7 +91,7 @@ Ce type d'instruction correspond à un accès mémoire unique : on lit ou écrit
 
 ### Accès mémoire multiples
 
-Ce type d'instruction correspond à la lecture ou l'écriture de plusieurs registres du banc de registres User à la fois. On les utilise pour gérer la pile lors d'appel de fonctions. Nous n'avons pas eu le temps de l'implémenter.
+Ce type d'instruction correspond à la lecture ou l'écriture de plusieurs registres du banc de registres User à la fois. On les utilise pour gérer la pile lors des appels de fonction. Nous n'avons pas eu le temps de l'implémenter.
 
 ## 3. Étage EXE
 
@@ -103,7 +103,7 @@ Schéma global de l'étage EXE (cf. fichier SVG pour zoomer) :
 
 ![[MU4IN101_rapport-schema-EXE.svg]]
 
-Les instructions arithmétiques et logiques peuvent avoir jusqu'à 3 opérandes sources. Les deux premières opérandes (dec_op1 et dec_op2) peuvent être inversées, d'où la présence d'un inverseur et d'un multiplexeur pour traiter chaque opérande avant son entrée dans l'ALU. La 2e opérande passe par le shifter de l'ALU car elle peut être décalée, parfois grâce à la 3e opérande source.
+Les instructions arithmétiques et logiques peuvent avoir jusqu'à 3 opérandes sources. Les deux premiers opérandes (dec_op1 et dec_op2) peuvent être inversés, d'où la présence d'un inverseur et d'un multiplexeur pour traiter chaque opérande avant son entrée dans l'ALU. Le 2e opérande passe par le shifter de l'ALU car elle peut être décalée, parfois grâce au 3e opérande source.
 
 ### Shifter
 
@@ -148,7 +148,7 @@ Pour tester EXE, nous avons envoyé artificiellement des instructions décodées
 
 DECOD contient un banc de registres REG et une machine à états. Il doit assurer deux fonctionnalités :
 - décoder les instructions pour permettre leur exécution par les étages EXE et MEM,
-- assurer le séquencement du pipeline, gérer les aléas et traiter les instructions multi-cycles (comme les transferts multiples).
+- assurer le séquencement du pipeline, gérer les aléas et traiter les instructions multicycles (comme les transferts multiples).
 
 L'instruction est reçue sous la forme d'un mot de 32 bits. DECOD la convertit en un mot de 127 bits interprétable par EXE et/ou MEM. C'est pourquoi DECOD contient un très grand nombre de signaux qui sont mis à jour selon la machine à états. Les signaux sont regroupés en 4 catégories : décodage des instructions, commande de EXE, commande MEM et séquencement/contrôle du pipeline (interaction avec les FIFO).
 
@@ -193,22 +193,22 @@ Schéma de l'automate de DECOD :
 
 ![[MU4IN101_rapport-automate-DECOD.svg]]
 
-#### Etat FETCH
+#### État FETCH
 
 C'est l'état de démarrage (après reset). On est dans l'état FETCH lorsqu'on attend une instruction à traiter. On attend que le buffer d'instructions ne soit plus vide et que le PC soit valide.
 
-| Transition | Etats            | Condition en VHDL                     | Explications                               |
+| Transition | États            | Condition en VHDL                     | Explications                               |
 | ---------- | ---------------- | ------------------------------------- | ------------------------------------------ |
 | T1         | (FETCH -> RUN)   | dec2if\_full = '1' and reg\_pcv = '1' | On a des instructions et le PC est valide. |
 | T2         | (FETCH -> FETCH) | else                                  |                                            |
 
 <div style="page-break-after: always"></div>
 
-#### Etat RUN
+#### État RUN
 
 Le rôle de cet état est de décoder l'instruction entrante et de l'exécuter si rien de spécial n'est nécessaire.
 
-| Transition | Etats           | Condition en VHDL                                                                             | Explications                                                                                                                                              |
+| Transition | États           | Condition en VHDL                                                                             | Explications                                                                                                                                              |
 | ---------- | --------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | T1         | (RUN -> RUN)    | if2dec_empty = '1' and if2dec_pop = '0'                                                       | Cas où IFETCH n'a pas reçu d'adresse d'instruction (juste pour la sécurité car ce cas ne devrait pas arriver)                                             |
 | T2         | (RUN -> RUN)    | condv = '0' or operv = '0' or ( dec2exe_full = '1' and exe_pop = '0' )                        | Les opérandes ou les flags ne sont pas valides ou on ne peut pas push l'instruction que l'on va décoder.                                                  |
@@ -221,30 +221,30 @@ Le rôle de cet état est de décoder l'instruction entrante et de l'exécuter s
 
 <div style="page-break-after: always"></div>
 
-#### Etat LINK
+#### État LINK
 
 Cet état vient du fait que l'on sauvegarde le PC (dans le Link Register) avant de le modifier. Il ne sert qu'à enlever le flag de link avant de laisser le décodage envoyer l'instruction de modification de PC.
 
-| Transition | Etats            | Condition en VHDL | Explications |
+| Transition | États            | Condition en VHDL | Explications |
 | ---------- | ---------------- | ----------------- | ------------ |
 | T1         | (LINK -> BRANCH) | aucune            | toujours     |
 
-#### Etat BRANCH
+#### État BRANCH
 
 On attend dans cet état que le PC redevienne valide et que les buffers d'instruction et d'adresse soient vides. Il purge l'instruction suivant un branchement pris.
 
-| Transition | Etats              | Condition en VHDL                                           | Explications                                         |
+| Transition | États              | Condition en VHDL                                           | Explications                                         |
 | ---------- | ------------------ | ----------------------------------------------------------- | ---------------------------------------------------- |
 | T1         | (BRANCH -> RUN)    | reg_pcv = '1' and if2dec_empty = '1' and dec2if_empty = '1' | Tous les buffers ont été purgés et le PC est valide. |
 | T2         | (BRANCH -> BRANCH) | else                                                        |                                                      |
 
-#### Etat MTRANS
+#### État MTRANS
 
 Cet état sert pour les transferts multiples. Il n'est actuellement pas fonctionnel dans notre projet et renvoie juste à l'état RUN.
 
 Voici les conditions théoriques de changement d'état :
 
-| Transition | Etats              | Condition en VHDL                  | Explications                                                 |
+| Transition | États              | Condition en VHDL                  | Explications                                                 |
 | ---------- | ------------------ | ---------------------------------- | ------------------------------------------------------------ |
 | T1         | (MTRANS -> MTRANS) | mtrans_list != x"0"                | Il reste des registres à transférer.                         |
 | T2         | (MTRANS -> BRANCH) | mtrans_list = x"F" and ldm_i = '1' | On a modifié le registre PC.                                 |
