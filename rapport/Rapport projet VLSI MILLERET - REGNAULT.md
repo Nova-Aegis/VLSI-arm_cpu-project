@@ -3,7 +3,7 @@
 Thaïs MILLERET 21101028 - Guillaume REGNAULT 21107756
 
 <div style="text-align:center;">Responsable de l'UE : Jean-Lou DESBARBIEUX<br/>
-Sorbonne Université Master Informatique Semestre 1 09/2024 - 01/2025 </div>
+Sorbonne Université Master Informatique Semestre 1 09/2024 - 01/2025</div>
 
 %%
 SVG à joindre au rendu :
@@ -97,7 +97,7 @@ Ce type d'instruction correspond à un accès mémoire unique : on lit ou écrit
 
 Ce type d'instruction correspond à la lecture ou l'écriture de plusieurs registres du banc de registres User à la fois. On les utilise pour gérer la pile lors d'appel de fonctions.
 
-## 3. L'étage EXE
+## 3. Étage EXE
 
 EXE est principalement constitué d'un shifter (décaleur) et d'une ALU. Il s'occupe des calculs arithmétiques et logiques. Cela permet le traitement des instructions arithmétiques et logiques, mais aussi du calcul d'adresse pour les transferts mémoire et les branchements.
 
@@ -148,7 +148,7 @@ Le test bench de l'ALU contient des tests pour les 4 opérations (ADD, AND, OR e
 
 Pour tester EXE, nous avons envoyé artificiellement des instructions décodées à EXE (comme si elles venaient de DECOD). Le test est cadencé par une horloge. On vérifie la sortie de EXE vers REG (valeurs des signaux, par exemple par rapport à write-back) ou MEM (adresse, data, indications pour MEM). On vérifie également l'état des FIFO qui relient EXE à DECOD et MEM (contenu, entrées et sorties) avant et après avoir pop/push dessus.
 
-## 4. L'étage DECOD
+## 4. Étage DECOD
 
 DECOD contient un banc de registres REG et une machine à états. Il doit assurer deux fonctionnalités :
 - décoder les instructions pour permettre leur exécution par les étages EXE et MEM,
@@ -269,7 +269,7 @@ Une autre problématique s'élève si on n'a pas de write-back. Dans ce cas l'id
 
 Comme pour EXE, nous avons testé séparément REG pour simplifier le test bench de DECOD.
 
-Le test bench de REG vérifie que les registres sont mis à jour au bon moment et renvoie la bonne valeur lorsqu'on les lit.
+Le test bench de REG vérifie que les registres sont mis à jour au bon moment et renvoient la bonne valeur lorsqu'on les lit.
 
 Nous testons DECOD directement dans le test bench du processeur. On vérifie que les entrées et sorties de DECOD sont celles attendues.
 Le test bench du processeur s'occupe de simuler la RAM sauf que l'on envoie des mots sans se soucier des adresses liées.
@@ -334,10 +334,11 @@ Traduction manuelle en assembleur :
 _start:
 	bl main
 	nop
+	mov r10, #TTY_out
+	str r0, [r10]
 	b _good
 	nop
 	b _bad
-
 
 main:
 	mov r1, #0
@@ -369,12 +370,25 @@ AdrTab:
 	.word 0x0a
 AdrTabFin:
 	.word 0x10
-
+TTY_out:
+	.word 0x00
 
 _bad:
 	add r0, r0, r0
 _good:
 	add r1, r1, r1
+```
+
+Trace dans le terminal :
+
+```
+Chargement du segment .text adr = 0x0
+Chargement du segment pile adr = 0x7ffff000 Taille = 0x1000
+Symbol _good found at adr=84
+Symbol _bad found at adr=80
+main_tb.vhdl:231:17:@241ns:(report note): TTY out : 0x00000037
+main_tb.vhdl:218:9:@246ns:(assertion note): GOOD!!!
+main_tb.vhdl:220:9:@246ns:(assertion note): end of test
 ```
 
 Branch and link sur GTKWave :
