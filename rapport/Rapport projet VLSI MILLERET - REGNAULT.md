@@ -17,11 +17,9 @@ Dans le cadre de l'UE Conception de circuits intégrés numériques, nous avons 
 
 ## 1. Architecture du processeur
 
-(Synthèse du Cours 5 : Architecture générale du processeur ARM, détail étage EXE)
-
 L'objectif principal est que le processeur puisse exécuter les instructions du jeu d'instructions ARM v2.3 conformément à leur spécification.
 
-Comme pour n'importe quel processeur pipeliné, nous essayons d'obtenir un CPI (nombre de Cycles Par Instruction) de 1, c'est-à-dire que le processeur exécute en moyenne une instruction par cycle d'horloge.
+Comme pour n'importe quel processeur, nous essayons d'obtenir un CPI (nombre de Cycles Par Instruction) le plus bas possible. Le CPI est le nombre moyen d'instructions exécutées par le processeur par cycle d'horloge. Ainsi, nous cherchons à implémenter les instructions de manière à ce qu'elles s'exécutent en un nombre minimal de cycles.
 
 Le jeu d'instructions ARM comprend des instructions de complexité très variable. Le cours propose donc de concevoir un pipeline asynchrone. On évite ainsi le gel simultané de tous les étages.
 
@@ -29,8 +27,6 @@ Un pipeline doit suivre trois règles :
 1. les étages sont équilibrés (le temps de propagation de l'instruction dans un étage est similaire pour tous les étages)
 2. les étages sont séparés par un matériel permettant la transmission des données à travers le pipeline (par exemple un banc de registres)
 3. chaque matériel appartient à un seul étage
-
-<div style="page-break-after: always"></div>
 
 ### Une architecture asynchrone
 
@@ -83,7 +79,7 @@ Ces instructions utilisent l'ALU, et parfois le shifter, pour faire des calculs 
 
 ### Multiplications
 
-La multiplication est une opération arithmétique complexe qui implique plusieurs additions.
+La multiplication est une opération arithmétique complexe qui implique plusieurs additions. Nous n'avons pas eu le temps de l'implémenter.
 
 ### Branchements
 
@@ -95,7 +91,7 @@ Ce type d'instruction correspond à un accès mémoire unique : on lit ou écrit
 
 ### Accès mémoire multiples
 
-Ce type d'instruction correspond à la lecture ou l'écriture de plusieurs registres du banc de registres User à la fois. On les utilise pour gérer la pile lors d'appel de fonctions.
+Ce type d'instruction correspond à la lecture ou l'écriture de plusieurs registres du banc de registres User à la fois. On les utilise pour gérer la pile lors d'appel de fonctions. Nous n'avons pas eu le temps de l'implémenter.
 
 ## 3. Étage EXE
 
@@ -146,7 +142,7 @@ Le test bench du shifter contient des tests pour les 5 opérations (LSL, LSR, AS
 
 Le test bench de l'ALU contient des tests pour les 4 opérations (ADD, AND, OR et XOR) pour des valeurs aléatoires et des cas extrêmes. Nous avons également testé le bon fonctionnement des flags.
 
-Pour tester EXE, nous avons envoyé artificiellement des instructions décodées à EXE (comme si elles venaient de DECOD). Le test est cadencé par une horloge. On vérifie la sortie de EXE vers REG (valeurs des signaux, par exemple par rapport à write-back) ou MEM (adresse, data, indications pour MEM). On vérifie également l'état des FIFO qui relient EXE à DECOD et MEM (contenu, entrées et sorties) avant et après avoir pop/push dessus.
+Pour tester EXE, nous avons envoyé artificiellement des instructions décodées à EXE (comme si elles venaient de DECOD). Le test est cadencé par une horloge. On vérifie la sortie de EXE vers REG (valeurs des signaux, par exemple par rapport à write-back) ou MEM (adresse, data, indications pour MEM). On vérifie également l'état de la FIFO qui relie EXE à MEM : on teste si elle est vide/pleine avant et après avoir pop/push dessus. L'état de la FIFO peut être également vérifié avec GTKWave.
 
 ## 4. Étage DECOD
 
@@ -156,9 +152,7 @@ DECOD contient un banc de registres REG et une machine à états. Il doit assure
 
 L'instruction est reçue sous la forme d'un mot de 32 bits. DECOD la convertit en un mot de 127 bits interprétable par EXE et/ou MEM. C'est pourquoi DECOD contient un très grand nombre de signaux qui sont mis à jour selon la machine à états. Les signaux sont regroupés en 4 catégories : décodage des instructions, commande de EXE, commande MEM et séquencement/contrôle du pipeline (interaction avec les FIFO).
 
-Comme l'architecture du processeur est asynchrone, il faut gérer la synchronisation des étages pour une instruction. Une instruction n'est lancée que si tous ses opérandes sources sont valides et que le registre de destination est valide.
-
-Le registre de destination de l'instruction est marqué comme non valide lors du lancement de l'instruction. Le registre de destination repasse à valide lorsque le résultat de l'instruction est disponible. Avec la contrainte qu'une instruction ne peut être lancée que si son registre de destination est valide, ce mécanisme permet de maintenir l'ordre des affectations (instructions) pour un registre donné.
+Comme l'architecture du processeur est asynchrone, il faut gérer la synchronisation des étages pour une instruction. Une instruction n'est lancée que si tous ses opérandes sources et les flags (stockés dans CSPR) sont valides. Le registre de destination de l'instruction est marqué comme non valide lors du lancement de l'instruction. Le registre de destination repasse à valide lorsque le résultat de l'instruction est disponible.
 
 <div style="page-break-after: always"></div>
 
@@ -166,9 +160,9 @@ Le registre de destination de l'instruction est marqué comme non valide lors du
 
 Le banc de registres contient les 16 registres décrits dans la partie "Architecture du processeur" et les 4 flags fournis par l'ALU (C, Z, N et V).
 
-Un registre contient une entrée din,  une sortie dout, une horloge et un signal de reset (le reset peut être asynchrone par rapport à l'horloge). Si reset est à 1 on remet le registre à 0. Sur le front montant de l'horloge, on copie la valeur de din dans dout. La synchronisation des étages du pipeline nécessite que les registres soient associés à des bits de validité : 1 bit pour la valeur du registre, 1 pour les flags C, N et Z et 1 pour le flag V.
+Un registre contient une entrée din,  une sortie dout, une horloge et un signal de reset (le reset peut être asynchrone par rapport à l'horloge). Si reset_n est à 0 on remet le registre à 0. Sur le front montant de l'horloge, on copie la valeur de din dans dout. La synchronisation des étages du pipeline nécessite que les registres soient associés à des bits de validité : 1 bit pour la valeur du registre, 1 pour les flags C, N et Z et 1 pour le flag V.
 
-Au reset, tous les registres sont considérés comme valide pour qu'on puisse lancer une instruction (le registre de destination doit être valide). Quand un registre est identifié par DECOD comme registre de destination d'une instruction, il est invalidé. Quand un résultat produit par EXE ou MEM est écrit dans REG, le registre de destination est validé. On ne peut écrire dans un registre que s'il est marqué comme invalide.
+Au reset, tous les registres sont considérés comme valide pour qu'on puisse lancer une instruction (les registres sources doivent être valides). Quand un registre est identifié par DECOD comme registre de destination d'une instruction, il est invalidé. Quand un résultat produit par EXE ou MEM est écrit dans REG, le registre de destination est validé. On ne peut écrire dans un registre que s'il est marqué comme invalide.
 De même, on ne peut mettre à jour les flags que si leur bit de validité respectif est à 0. Les instructions logiques écrivent C, N et Z. Seules les instructions arithmétiques affectent V.
 
 MEM et EXE peuvent produire simultanément un résultat. En cas de conflit (les résultats de MEM et EXE vont dans le même registre de destination), on ignore l'écriture de MEM car elle est nécessairement plus ancienne. En effet, une instruction exécutée par EXE ne peut être lancée que si ses opérandes sources sont à jour (registres sources valides) donc le résultat produit par EXE est effectivement plus récent que n'importe quelle donnée chargée par MEM.
@@ -191,7 +185,7 @@ Le contrôle du flot d'instructions par DECOD repose sur une machine à états e
 
 La machine à états contrôle ainsi la lecture et l'écriture dans les FIFO dec2if, if2dec et dec2exec grâce à 3 signaux : dec2if_push, if2dec_pop (port dec_pop) et dec2exe_push.
 
-Les branchements et les transferts multiples doivent être traités en plusieurs cycles.
+Les multiplications, les branchements et les transferts multiples doivent être traités en plusieurs cycles.
 
 <div style="page-break-after: always"></div>
 
@@ -292,6 +286,8 @@ Tous les tests réussissent donc on n'a pas de message d'erreur sur le terminal 
 
 ![[instruction-condition.mod.cropped.png]]
 
+<div style="page-break-after: always"></div>
+
 ### Test de branchement
 
 Pour un branchement, nous vérifions la valeur du registre PC. Nous pouvons également vérifier que le branchement a fonctionné en regardant la valeur de PC dans GTKWave.
@@ -323,8 +319,6 @@ int main() {
 	return sum;
 }
 ```
-
-<div style="page-break-after: always"></div>
 
 Traduction manuelle en assembleur :
 
@@ -379,6 +373,20 @@ _good:
 	add r1, r1, r1
 ```
 
+Branch and link sur GTKWave (saut de `_start` vers `main`) :
+
+![[program-branch-link.mod.cropped.png]]
+
+Load avec postindex sur GTKWave :
+
+![[program-load-postindex.mod.cropped.png]]
+
+Le load est dans la boucle for. La capture d'écran correspond à l'itération 0. 
+
+Return sur GTKWave (return du main) :
+
+![[program-return.mod.cropped.png]]
+
 Trace dans le terminal :
 
 ```
@@ -390,18 +398,6 @@ main_tb.vhdl:231:17:@241ns:(report note): TTY out : 0x00000037
 main_tb.vhdl:218:9:@246ns:(assertion note): GOOD!!!
 main_tb.vhdl:220:9:@246ns:(assertion note): end of test
 ```
-
-Branch and link sur GTKWave :
-
-![[program-branch-link.mod.cropped.png]]
-
-Load avec postindex sur GTKWave :
-
-![[program-load-postindex.mod.cropped.png]]
-
-Return sur GTKWave :
-
-![[program-return.mod.cropped.png]]
 
 ## Conclusion
 
