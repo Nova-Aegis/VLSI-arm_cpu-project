@@ -1,31 +1,30 @@
 	.text
 	.globl _start
 _start:
-	ldr sp, AdrStack
-	b main
+	bl main
+	nop
+	b _good
+	nop
 	b _bad
 
 
-
 main:
-	mov r0, #0
+	mov r1, #0
 	mov r4, #AdrTab
 	mov r5, #AdrTabFin
 main_loop:
 	ldr r6, [r4], #4
-	add r0, r0, r6
+	add r1, r1, r6
 	cmp r4, r5
 	bne main_loop
+	nop
 
-	mov r1, r0
-	mov r2, r0
-	mov r3, r0
-	b _good
+	mov r0, r1
+	mov pc, lr
+	mov r0, r0
 	b _bad
+	mov r0, r0
 	
-
-AdrStack:
-	.word 0x80000000
 AdrTab:
 	.word 0x01
 	.word 0x02
