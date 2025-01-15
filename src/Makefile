@@ -99,11 +99,15 @@ main_tb.o : main_tb.vhdl icache.o dcache.o ram.o
 arm_core.o : arm_core.vhdl ifetch.o decod.o exec.o mem.o
 ifetch.o : ifetch.vhdl fifo_32b.o
 decod.o : decod.vhdl fifo_32b.o fifo_127b.o reg.o
-reg.o : reg.vhdl 
+reg.o : reg.vhdl adder.o
 exec.o : exec.vhdl fifo_72b.o alu.o shifter.o
 fifo_72b.o : fifo_72b.vhdl
 fifo_32b.o : fifo_32b.vhdl
 fifo_127b.o : fifo_127b.vhdl
-alu.o : alu.vhdl
+alu.o : alu.vhdl adder.o
 shifter.o : shifter.vhdl
 mem.o : mem.vhdl
+adder.o : adder.vhdl fa16.o
+fa16.o : fa16.vhdl fa4.o
+fa4.o : fa4.vhdl fa.o
+fa.o : fa.vhdl

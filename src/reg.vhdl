@@ -323,6 +323,18 @@ architecture Behavior OF Reg is
 	
 begin
 
+	--- PC updater
+	pc_adder : Add32b
+		port map(
+			A => reg15,
+			B => x"00000004",
+			cin => '0',
+			cout => open,
+			S => pc_upd,
+			vdd => vdd,
+			vss => vss
+		);
+	
 	
 	process( ck, reset_n )
 
@@ -366,11 +378,15 @@ begin
 			
 			--- écriture registre destination
 			if wen1 = '1' and r_regv(wadr1, regs_valide) = '0' then
-				w_regv(wadr1, const_on, regs_valide, false);
 				w_reg(wadr1, wdata1, reg0, reg1, reg2, reg3, reg4, reg5, reg6, reg7, reg8, reg9, reg10, reg11, reg12, reg13, reg14, reg15);
+				if ((inval1 = '0' or wadr1 /= inval_adr1) and (inval2 = '0' or wadr1 /= inval_adr2)) then
+					w_regv(wadr1, const_on, regs_valide, false);
+				end if;
 			end if;	
 			if wen2 = '1' and wadr1 /= wadr2 and r_regv(wadr2, regs_valide) = '0' then
-				w_regv(wadr2, const_on, regs_valide, false);
+				if ((inval1 = '0' or wadr2 /= inval_adr1) and (inval2 = '0' or wadr2 /= inval_adr2)) then
+					w_regv(wadr2, const_on, regs_valide, false);
+				end if;
 				w_reg(wadr2, wdata2, reg0, reg1, reg2, reg3, reg4, reg5, reg6, reg7, reg8, reg9, reg10, reg11, reg12, reg13, reg14, reg15);
 			end if;	
 
@@ -431,17 +447,7 @@ begin
 
 
 
-	--- PC updater
-	pc_adder : Add32b
-		port map(
-			A => reg15,
-			B => x"00000004",
-			cin => '0',
-			cout => open,
-			S => pc_upd,
-			vdd => vdd,
-			vss => vss
-		);
+	
 	
 
 

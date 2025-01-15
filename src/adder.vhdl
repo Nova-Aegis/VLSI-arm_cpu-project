@@ -26,30 +26,36 @@ architecture Structurel of Add32b is
 	-- 	S <= res(31 downto 0);
 
 	
-	component FAdder
+	component FAdder16
 		port (
-			A, B, Cin : in std_logic;
-			Sout, Cout : out std_logic;
+			A, B : in std_logic_vector(15 downto 0);
+			Cin : in std_logic;
+			Sout : out std_logic_vector(15 downto 0);
+			Cout : out std_logic;
 			vdd : in bit;
 			vss : in bit
 			);
 	end component;
 
-	signal C : std_logic_vector(32 downto 0);
+	signal C : std_logic;
 
 begin
-	gen : for i in 0 to 31 generate
-		FA_all: FAdder
-			port map(
-				A => A(i),
-				B => B(i),
-				Cin => C(i),
-				Sout => S(i),
-				Cout => C(i+1),
-				vdd => vdd,
-				vss => vss
-				);
-	end generate;
-	C(0) <= Cin;
-	Cout <= C(32);
+
+	FA_0 : Fadder16
+		port map(
+			A => A(15 downto 0), B => B(15 downto 0),
+			Cin => Cin,
+			Sout => S(15 downto 0),
+			Cout => C,
+			vdd => vdd, vss => vss
+			);
+	
+	FA_1 : Fadder16
+		port map(
+			A => A(31 downto 16), B => B(31 downto 16),
+			Cin => C,
+			Sout => S(31 downto 16),
+			Cout => Cout,
+			vdd => vdd, vss => vss
+			);
 end Structurel;

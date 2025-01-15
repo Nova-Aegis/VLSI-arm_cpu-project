@@ -341,20 +341,20 @@ signal debug_state : Std_Logic_Vector(3 downto 0);
 
 
 
--- function vtob(constant vec : std_logic_vector) return string is
---   variable result : string(1 to vec'length); -- Output string
--- begin
---   for i in vec'range loop
---     if vec(i) = '1' then
---       result(vec'length - i) := '1';
---     elsif vec(i) = '0' then
---       result(vec'length - i) := '0';
---     else
---       result(vec'length - i) := 'X'; -- For undefined values
---     end if;
---   end loop;
---   return result;
--- end function;
+function vtob(constant vec : std_logic_vector) return string is
+  variable result : string(1 to vec'length); -- Output string
+begin
+  for i in vec'range loop
+    if vec(i) = '1' then
+      result(vec'length - i) := '1';
+    elsif vec(i) = '0' then
+      result(vec'length - i) := '0';
+    else
+      result(vec'length - i) := 'X'; -- For undefined values
+    end if;
+  end loop;
+  return result;
+end function;
 
 
 
@@ -369,7 +369,7 @@ begin
 					din(57)	 => alu_wb,
 					din(56)	 => flag_wb,
 
-					din(55 downto 24)	 => rdata3,
+					din(55 downto 24)	 => mem_data,
 					din(23 downto 20)	 => ld_dest,
 					din(19)	 => mem_lw,
 					din(18)	 => mem_lb,
@@ -605,7 +605,7 @@ begin
 	offset32 <=	(31 downto 26 => if_ir(23)) & if_ir(23 downto 0) & "00";
 	-- std_logic_vector(resize(signed(if_ir(23 downto 0) & "00"), 32));
 
-	op2	<= x"00000007" when branch_t = '1' and blink = '1' else
+	op2	<= x"00000003" when branch_t = '1' and blink = '1' else
 				 offset32 		when branch_t = '1' else
 				 x"FFFFFFFF" when mtrans_t = '1' and if_ir(23) = '0' else
 				 x"00000001" when mtrans_t = '1' and if_ir(23) = '1' else
@@ -620,11 +620,14 @@ begin
 							if_ir(15 downto 12);
 
 	alu_wb	<= '1' when ((regop_t = '1' and (tst_i = '0' and teq_i = '0' and cmp_i = '0' and cmn_i = '0'))--- DEBUGING --- if_ir(24 downto 21) <= X"7" and if_ir(24 downto 21) >= X"C") -- pas de wb pour TST à CMN
-						 					or mult_t = '1' or branch_t = '1') else
+											 or mult_t = '1' or branch_t = '1') else
+						 '1' when trans_t = '1' and if_ir(24) = '0' else
 						 if_ir(21) when trans_t = '1' or mtrans_t = '1' else
 						 '0';
 
 	flag_wb	<= if_ir(20) when regop_t = '1' or mult_t = '1' else '0';
+
+	mem_data <= rdata3;
 
 -- reg read
 	-- Rn
@@ -650,7 +653,7 @@ begin
 	inval_exe <= '0' when dec2exe_push = '0' else
 							 '1' when branch_t = '1' or 
 							 (regop_t = '1' and tst_i = '0' and teq_i = '0' and cmp_i = '0' and cmn_i = '0') or
-							 ((trans_t = '1' or mtrans_t = '1') and if_ir(21) = '1') or
+							 ((trans_t = '1' or mtrans_t = '1') and (if_ir(21) = '1' or if_ir(24) = '0')) or
 							 mult_t = '1' else
 							 '0';
 
@@ -818,6 +821,7 @@ if (rising_edge(ck)) then
 		cur_state <= FETCH;
 	else
 		cur_state <= next_state;
+		--report "pc : " & vtob(reg_pc);
 		--- DEBUG report "went to next state";
 	end if;
 end if;
@@ -863,7 +867,7 @@ inc_pc <= dec2if_push;
 --state machine process.
 process (cur_state, dec2if_full, cond, condv, operv, dec2exe_full, if2dec_empty, reg_pcv, bl_i,
 			branch_t, and_i, eor_i, sub_i, rsb_i, add_i, adc_i, sbc_i, rsc_i, orr_i, mov_i, bic_i,
-			mvn_i, ldr_i, ldrb_i, ldm_i, stm_i, if_ir, mtrans_rd, mtrans_mask_shift)
+			mvn_i, ldr_i, ldrb_i, ldm_i, stm_i, if_ir, mtrans_rd, mtrans_mask_shift, alu_dest, alu_wb, ld_dest)
 begin
 	--report "value = " & vtob(dec2if_full & cond & condv & operv & dec2exe_full & if2dec_empty & reg_pcv & bl_i & branch_t & and_i & eor_i & sub_i & rsb_i & add_i & adc_i & sbc_i & rsc_i & orr_i & mov_i & bic_i & mvn_i & ldr_i & ldrb_i & ldm_i & stm_i & if_ir & mtrans_rd);
 	case cur_state is
@@ -876,9 +880,13 @@ begin
 			mtrans_loop_adr <= '0';
 			dec2if_push <= '1';
 			blink <= '0';
+			--if2dec_pop <= '0';
+			-- if (reg_pcv = '1') then
+			-- 	dec2if_push <= '1';
+			-- end if;
 
 			--- DEBUG end
-			if dec2if_full = '1' and reg_pcv = '1' then -- T2 (FETCH -> FETCH)
+			if (dec2if_full = '1' or if_pop = '1') and reg_pcv = '1' then -- T2 (FETCH -> FETCH)
 				-- if2dec_pop <= '1';
 				next_state <= RUN;
 			else -- T1 (FETCH -> RUN)
@@ -899,15 +907,15 @@ begin
 
 			
 			-- end if;
-			if (if2dec_empty = '1' and if2dec_pop = '0') then
-				--- DEBUG report "if2dec_empty";
-				if (dec2if_full = '1') then
-					dec2if_push <= '0';
-				end if;
-				dec2exe_push <= '0';
-				next_state <= RUN;
-			else
-				if (condv = '0' or operv = '0' or (dec2exe_full = '1' and exe_pop = '0')) then
+			-- if if2dec_empty = '0' and (if2dec_empty = '1' and if2dec_pop = '0') then
+			-- 	--- DEBUG report "if2dec_empty";
+			-- 	if (dec2if_full = '1') then
+			-- 		dec2if_push <= '0';
+			-- 	end if;
+			-- 	dec2exe_push <= '0';
+			-- 	next_state <= RUN;
+			-- else
+			if (condv = '0' or operv = '0' or (dec2exe_full = '1' and exe_pop = '0')) then
 					--- DEBUG if (condv = '0') then
 						--- DEBUG report "condv = '0'";
 					--- DEBUG elsif operv = '0' then
@@ -930,11 +938,12 @@ begin
 					if (branch_t = '1') then -- branch
 						--- DEBUG report "branch";
 						dec2exe_push <= '1'; -- push branch and flush instruction buffer
-						if2dec_pop <= '0';
 						dec2if_push <= '0';
 						if (blink = '1') then -- branch and link
+							if2dec_pop <= '0';
 							next_state <= LINK;
 						else -- branch and not link
+							if2dec_pop <= '1';
 							next_state <= BRANCH;
 						end if;
 					elsif (mtrans_t = '1') then -- multiple transfer
@@ -958,8 +967,12 @@ begin
 						-- push instruction and inc pc
 						dec2exe_push <= '1';
 						--- if writing in pc then we must flush the instruction buffer
-						if ((alu_dest = x"F" and alu_wb = '1') or (ld_dest = x"F" and (mem_lw = '1' or mem_lb = '1'))) then
-							--report "going to BRANCH";
+						if (regop_t = '1' and alu_dest = x"F" and alu_wb = '1') then
+							dec2exe_push <= '1';
+							if2dec_pop <= '1';
+							dec2if_push <= '0';
+							next_state <= BRANCH;
+						elsif (trans_t = '1' and ld_dest = x"F" and (mem_lw = '1' or mem_lb = '1')) then
 							dec2exe_push <= '1';
 							if2dec_pop <= '0';
 							dec2if_push <= '0';
@@ -973,12 +986,13 @@ begin
 						--report "RUN error";
 					end if;
 				end if;
-			end if;
+			--end if;
 			
 
 --- MTRANS state
 		when MTRANS =>
 			debug_state <= x"2";
+			next_state <= RUN;
 			--- DEBUG report "switched to MTRANS";
 			--???
 
@@ -987,6 +1001,22 @@ begin
 			debug_state <= x"3";
 			--- DEBUG report "switched to BRANCH";
 			dec2exe_push <= '0';
+
+			-- if if2dec_empty = '1' and dec2if_full = '0' then
+			-- 	if2dec_pop <= '0';
+			-- 	if reg_pcv = '1' then
+			-- 		dec2if_push <= '1';
+			-- 	end if;
+			-- 	next_state <= BRANCH;
+			-- elsif (reg_pcv = '1' and if2dec_empty = '0' and dec2if_full = '1') then
+			-- 	dec2if_push <= '1';
+			-- 	if2dec_pop <= '1';
+			-- 	next_state <= RUN;
+			-- else
+			-- 	if2dec_pop <= '1';
+			-- 	next_state <= BRANCH;
+			-- end if;
+			
 			if (reg_pcv = '1' and if2dec_empty = '1' and dec2if_full = '0') then
 				dec2if_push <= '1';
 				if2dec_pop <= '1';

@@ -88,6 +88,8 @@ architecture behav of main_tb is
 	signal	GoodAdr			: Std_Logic_Vector(31 downto 0) ;
 	signal	BadAdr			: Std_Logic_Vector(31 downto 0) ;
 
+	signal valid : std_logic := '1';
+	
 	begin
 	--  Component instantiation.
 
@@ -157,17 +159,18 @@ begin
 	wait for 1 ns;
 	reset_n <= '1';
 
-	while not (if_adr_valid = '1' and (if_adr = GoodAdr or if_adr = BadAdr)) loop
+	while not (if_adr_valid = '1' and (if_adr = GoodAdr or if_adr = BadAdr)) and valid = '1' loop
 		ck <= '0';
 		wait for 1 ns;
 		ck <= '1';
 		wait for 1 ns;
 	end loop;
 
-	assert if_adr /= GoodAdr report "GOOD!!!" severity note;
-	assert if_adr /= BadAdr report "BAD!!!" severity note;
+	assert if_adr = GoodAdr report "GOOD!!!" severity note;
+	assert if_adr = BadAdr report "BAD!!!" severity note;
 	assert false report "end of test" severity note;
 
 wait;
 end process;
+
 end behav;
