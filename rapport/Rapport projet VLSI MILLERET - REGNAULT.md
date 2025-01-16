@@ -381,7 +381,7 @@ Branch and link sur GTKWave (saut de `_start` vers `main`) :
 
 ![[program-branch-link.mod.cropped.png]]
 
-Load avec postindex sur GTKWave :
+Load avec post indexation sur GTKWave :
 
 ![[program-load-postindex.mod.cropped.png]]
 
