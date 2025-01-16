@@ -19,9 +19,13 @@ Dans le cadre de l'UE Conception de circuits intégrés numériques, nous avons 
 
 L'objectif principal est que le processeur puisse exécuter les instructions du jeu d'instructions ARM v2.3 conformément à leur spécification.
 
-Comme pour n'importe quel processeur, nous essayons d'obtenir un CPI (nombre de Cycles Par Instruction) le plus bas possible. Le CPI est le nombre moyen d'instructions exécutées par le processeur par cycle d'horloge. Ainsi, nous cherchons à implémenter les instructions de manière à ce qu'elles s'exécutent en un nombre minimal de cycles.
+Comme pour n'importe quel processeur, nous essayons d'obtenir un CPI (nombre de Cycles Par Instruction) le plus bas possible, proche de 1. Le CPI est le nombre moyen d'instructions exécutées par le processeur par cycle d'horloge. Ainsi, nous cherchons à implémenter les instructions de manière à ce qu'elles s'exécutent en un nombre minimal de cycles.
+
+Un autre objectif est d'avoir une période d'horloge courte. Pour cela, il faut que le temps de propagation dans l'étage le plus long (chemin critique) soit court. C'est possible en optimisant la réalisation de manière à limiter le nombre de portes logiques à traverser par étage.
 
 Le jeu d'instructions ARM comprend des instructions de complexité très variable. Le cours propose donc de concevoir un pipeline asynchrone. On évite ainsi le gel simultané de tous les étages.
+
+<div style="page-break-after: always"></div>
 
 Un pipeline doit suivre trois règles :
 1. les étages sont équilibrés (le temps de propagation de l'instruction dans un étage est similaire pour tous les étages)
@@ -43,6 +47,8 @@ L'architecture comporte 4 étages :
 3. EXE : calcul arithmétique ou logique
 4. MEM : accès mémoire (lecture ou écriture)
 
+<div style="page-break-after: always"></div>
+
 Schéma du processeur :
 
 ![[MU4IN101_rapport-schema-global.png]]
@@ -62,6 +68,8 @@ Le registre CPSR contient des flags générés par l'ALU et mémorisés si l'ins
 - Z : le résultat de l'ALU est égal à 0
 - C : retenue générée par l'ALU dans le cas des instructions arithmétiques et par le shifter dans le cas des instructions logiques
 - V : dépassement de capacité dans le cas d'une opération arithmétique signée
+
+<div style="page-break-after: always"></div>
 
 ## 2. Jeu d'instructions ARM
 
@@ -85,6 +93,8 @@ La multiplication est une opération arithmétique complexe qui implique plusieu
 
 Un branchement est une rupture de séquence : au lieu d'exécuter l'instruction suivante du code assembleur, on saute vers une autre instruction qui peut être située avant comme après l'instruction séquentielle.
 
+<div style="page-break-after: always"></div>
+
 ### Accès mémoire simples
 
 Ce type d'instruction correspond à un accès mémoire unique : on lit ou écrit un mot (ou un octet).
@@ -95,13 +105,13 @@ Ce type d'instruction correspond à la lecture ou l'écriture de plusieurs regis
 
 ## 3. Étage EXE
 
-EXE est principalement constitué d'un shifter (décaleur) et d'une ALU. Il s'occupe des calculs arithmétiques et logiques. Cela permet le traitement des instructions arithmétiques et logiques, mais aussi du calcul d'adresse pour les transferts mémoire et les branchements.
-
-Il reçoit ses instructions de l'étage DECOD via une FIFO (profondeur d'une instruction codée sur 32 bits) et renvoie ses résultats au banc de registres REG situé dans DECOD. Les instructions mémoire sont directement transmises vers l'étage MEM via une FIFO.
-
 Schéma global de l'étage EXE (cf. fichier SVG pour zoomer) :
 
 ![[MU4IN101_rapport-schema-EXE.svg]]
+
+EXE est principalement constitué d'un shifter (décaleur) et d'une ALU. Il s'occupe des calculs arithmétiques et logiques. Cela permet le traitement des instructions arithmétiques et logiques, mais aussi du calcul d'adresse pour les transferts mémoire et les branchements.
+
+Il reçoit ses instructions de l'étage DECOD via une FIFO (profondeur d'une instruction codée sur 32 bits) et renvoie ses résultats au banc de registres REG situé dans DECOD. Les instructions mémoire sont directement transmises vers l'étage MEM via une FIFO.
 
 Les instructions arithmétiques et logiques peuvent avoir jusqu'à 3 opérandes sources. Les deux premiers opérandes (dec_op1 et dec_op2) peuvent être inversés, d'où la présence d'un inverseur et d'un multiplexeur pour traiter chaque opérande avant son entrée dans l'ALU. Le 2e opérande passe par le shifter de l'ALU car elle peut être décalée, parfois grâce au 3e opérande source.
 
@@ -117,6 +127,10 @@ cin est la valeur à shifter sur 32 bits, dout est le résultat de l'opération,
 
 ### ALU
 
+Schéma de l'ALU :
+
+![[MU4IN101_rapport-schema-ALU.svg]]
+
 L'Unité Arithmétique et Logique peut réaliser 4 opérations de base : addition, ET logique, OU logique et OU exclusif. Elle reçoit 2 opérandes (sur 32 bits) A et B et une retenue entrante cin. Elle fournit le résultat res (sur 32 bits) et 4 flags Z, N, V et Cout (ce sont les flags enregistrés dans le registre CPSR).
 
 L'entrée cmd spécifie l'opération à effectuer :
@@ -129,10 +143,6 @@ Nous avons utilisé les opérateurs AND, OR et XOR fournis par VHDL.
 Pour l'addition, on aurait pu utiliser l'opérateur + de VHDL sur les vecteurs A et B. Nous avons choisi d'implémenter un additionneur à propagation de retenue (Ripple Carry Adder) en branchant en série des Full Adder.
 
 L'ALU réalise les 4 opérations mais une seule est envoyée en sortie via un multiplexeur dont le sélecteur est cmd.
-
-Schéma de l'ALU :
-
-![[MU4IN101_rapport-schema-ALU.svg]]
 
 ### Test bench de EXE
 
@@ -154,9 +164,11 @@ L'instruction est reçue sous la forme d'un mot de 32 bits. DECOD la convertit e
 
 Comme l'architecture du processeur est asynchrone, il faut gérer la synchronisation des étages pour une instruction. Une instruction n'est lancée que si tous ses opérandes sources et les flags (stockés dans CSPR) sont valides. Le registre de destination de l'instruction est marqué comme non valide lors du lancement de l'instruction. Le registre de destination repasse à valide lorsque le résultat de l'instruction est disponible.
 
-<div style="page-break-after: always"></div>
-
 ### Banc de registres REG
+
+Schéma de REG (cf. fichier SVG pour zoomer) :
+
+![[MU4IN101_rapport-schema-REG.svg]]
 
 Le banc de registres contient les 16 registres décrits dans la partie "Architecture du processeur" et les 4 flags fournis par l'ALU (C, Z, N et V).
 
@@ -168,12 +180,6 @@ De même, on ne peut mettre à jour les flags que si leur bit de validité respe
 MEM et EXE peuvent produire simultanément un résultat. En cas de conflit (les résultats de MEM et EXE vont dans le même registre de destination), on ignore l'écriture de MEM car elle est nécessairement plus ancienne. En effet, une instruction exécutée par EXE ne peut être lancée que si ses opérandes sources sont à jour (registres sources valides) donc le résultat produit par EXE est effectivement plus récent que n'importe quelle donnée chargée par MEM.
 
 Le registre 15 (PC) est un registre particulier. On lui associe un opérateur réalisant l'opération +4 et son contenu et sa validité sont accessibles directement via l'interface de REG. On remarque ici que le calcul de l'instruction suivante se fait dans DECOD.
-
-<div style="page-break-after: always"></div>
-
-Schéma de REG (cf. fichier SVG pour zoomer) :
-
-![[MU4IN101_rapport-schema-REG.svg]]
 
 ### Machine à états
 
@@ -187,8 +193,6 @@ La machine à états contrôle ainsi la lecture et l'écriture dans les FIFO dec
 
 Les multiplications, les branchements et les transferts multiples doivent être traités en plusieurs cycles.
 
-<div style="page-break-after: always"></div>
-
 Schéma de l'automate de DECOD :
 
 ![[MU4IN101_rapport-automate-DECOD.svg]]
@@ -201,8 +205,6 @@ C'est l'état de démarrage (après reset). On est dans l'état FETCH lorsqu'on 
 | ---------- | ---------------- | ------------------------------------- | ------------------------------------------ |
 | T1         | (FETCH -> RUN)   | dec2if\_full = '1' and reg\_pcv = '1' | On a des instructions et le PC est valide. |
 | T2         | (FETCH -> FETCH) | else                                  |                                            |
-
-<div style="page-break-after: always"></div>
 
 #### État RUN
 
@@ -218,8 +220,6 @@ Le rôle de cet état est de décoder l'instruction entrante et de l'exécuter s
 | T6         | (RUN -> MTRANS) | mtrans_t = '1'                                                                                | L'instruction est un transfert multiple.                                                                                                                  |
 | T7         | (RUN -> BRANCH) | ( alu_dest = x"F" and alu_wb = '1') or ( ld_dest = x"F" and ( mem_lw = '1' or mem_lb = '1' )) | Cas où une autre instruction qu'un branchement agit sur PC. (Ne devrait arriver en aucun cas sauf lors du return d'une fonction où on fait `MOV PC, LR`.) |
 | T8         | (RUN -> RUN)    | else                                                                                          | C'est une instruction standard (mult, load, store, regular operation, swap).                                                                              |
-
-<div style="page-break-after: always"></div>
 
 #### État LINK
 
@@ -249,6 +249,10 @@ Voici les conditions théoriques de changement d'état :
 | T1         | (MTRANS -> MTRANS) | mtrans_list != x"0"                | Il reste des registres à transférer.                         |
 | T2         | (MTRANS -> BRANCH) | mtrans_list = x"F" and ldm_i = '1' | On a modifié le registre PC.                                 |
 | T3         | (MTRANS -> RUN)    | else                               | On a traité tous les registres et le PC n'a pas été modifié. |
+
+### Idées pour les multiplications
+
+Une idée est d'implémenter l'algorithme de Booth pour avoir des multiplications qui s'exécutent en peu de cycles.
 
 ### Idées pour les transferts multiples
 
