@@ -27,6 +27,7 @@ The swap operation (not implemented) switches the data of 2 registers.
 - GHDL
 - arm compiler
 - make
+- GTKWave (optional)
 
 ## Compiling
 
@@ -66,7 +67,7 @@ $(ARM-ASM-COMPILER) -march=armv2a
 $(ARM-LINKER) -Bstatic -fix-v4bx
 ```
 
-See `test-pogram/Makefile` for example.
+See `test_pogram/Makefile` for example.
 
 ## Running programs
 
