@@ -87,9 +87,10 @@ synthesis : $(VHDLS_CHIP:.vhdl=)
 
 # The Janitor
 clean:
-	-rm *.o *.vcd
-	-rm *~
-	-rm alu_tb adder32_tb shifter_tb exec_tb fifo_72b_tb arm_tb main_tb
+	-rm -f *.o *.vcd
+	-rm -f *~
+	-rm -f alu_tb adder32_tb shifter_tb exec_tb fifo_72b_tb arm_tb main_tb
+	-rm -f work-obj93.cf
 
 #######
 ram.o : ram.vhdl

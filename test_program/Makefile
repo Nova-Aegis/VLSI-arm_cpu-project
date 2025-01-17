@@ -1,7 +1,7 @@
-CC = /usr/bin/arm-linux-gnu-gcc
-AS_ARM = /usr/bin/arm-linux-gnu-as
-LD_ARM = /usr/bin/arm-linux-gnu-ld
-CFLAGS = -march=armv2a -Wall
+CC = /usr/bin/arm-linux-gnu-gcc # replace with your arm gcc compiler
+AS_ARM = /usr/bin/arm-linux-gnu-as # replace with your arm asm compiler
+LD_ARM = /usr/bin/arm-linux-gnu-ld # replace with your arm linker
+CFLAGS = -march=armv2a
 LD_FLAGS = -Bstatic -fix-v4bx
 
 PROG1 = small_program_sum
@@ -22,17 +22,4 @@ $(PROG1) : $(PROG1).o
 $(PROG2) : $(PROG2).o
 	$(LD_ARM) $(LD_FLAGS) -T sections.lds -g -o $@ $^
 
-
-OBJDUMP = /usr/bin/arm-linux-gnu-readelf
-
-objdump :
-	echo "OBJDUMP" > $(PROG1).dump
-	$(OBJDUMP) -A $(PROG1) >> $(PROG1).dump
-	$(OBJDUMP) -x .text $(PROG1) >> $(PROG1).dump
-	$(OBJDUMP) -x .data $(PROG1) >> $(PROG1).dump
-	echo "OBJDUMP" > $(PROG1).dump
-	$(OBJDUMP) -A $(PROG2) >> $(PROG2).dump
-	$(OBJDUMP) -x .text $(PROG2) >> $(PROG2).dump
-	$(OBJDUMP) -x .data $(PROG2) >> $(PROG2).dump
-
-.PHONY : all objdump
+.PHONY : all

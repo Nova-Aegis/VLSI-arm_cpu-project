@@ -91,7 +91,12 @@ architecture behav of main_tb is
 	signal valid : std_logic := '1';
 
 
-
+	--- ============================================================
+	--- ============================================================
+	--- Change the constant to your TTY out address
+	constant TTY_out : std_logic_vector(31 downto 0) := x"0000007C";
+	--- ============================================================
+	--- ============================================================
 
 	function to_hstring (value     : STD_LOGIC_VECTOR) return STRING is
     constant ne     : INTEGER := (value'length+3)/4;
@@ -224,7 +229,7 @@ end process;
 
 process
 begin
-	wait until mem_adr = x"0000007C";
+	wait until mem_adr = TTY_out;
 	if mem_stb = '1' then
 		report "TTY out : 0x" & to_hstring(mem_data(7 downto 0));
 	elsif mem_stw = '1' then
