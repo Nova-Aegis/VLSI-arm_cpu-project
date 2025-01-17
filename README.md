@@ -87,3 +87,11 @@ An output can be setup to print the hexadecimal value of a data written by memor
 
 No other modification is necessary, the output will be printed automatically when executing your program.
 
+# Authors
+
+- [Thaïs Milleret](https://www.linkedin.com/in/thais-milleret/)
+- [Guilaume Regnault](https://www.linkedin.com/in/guillaume-regnault-754b8a332)
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 - see the LICENSE file for details.
