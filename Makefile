@@ -1,4 +1,5 @@
 SRC_DIR = src
+TEST_PROGRAM_DIR = test_program
 
 .PHONY : help compile test clean
 
@@ -12,6 +13,9 @@ compile :
 
 test :
 	cd $(SRC_DIR) && make run_arm
+
+test_program : compile
+	./execute $(TEST_PROGRAM_DIR)/sum --vcd=sum.vcd
 
 # The Janitor
 clean:
