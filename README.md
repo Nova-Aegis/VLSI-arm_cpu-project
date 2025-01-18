@@ -88,6 +88,14 @@ To run compiled programs, use the following command :
 ./execute <path/to/program/elf> [--vcd=<vcd-file>.vcd]
 ```
 
+A test program is offered and can be executed run with :
+
+```sh
+make test_program
+```
+
+The expected ouput is 0x37.
+
 ## Examining trace
 
 The executions will leave a trace when `[--vcd=<vcd-file>.vcd]` is used.
