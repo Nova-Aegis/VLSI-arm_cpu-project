@@ -5,29 +5,39 @@ This project implements a processor capable of executing the ARM v2.3 instructio
 ## About the implementation
 
 This implementation uses a 4 stage asynchronous system : IFETCH, DECODE, EXECUTE, MEMORY.
+
 IFETCH (given to us) is in charge of fetching the next instruction with the given address.
+
 DECODE holds the register bank and is the brain of the processor. It decodes the instruction, delays it when necessary and choses what EXE and MEM will be working on.
+
 EXECUTE is the brawn of the processor, it does the logical and arithemtic operations, shifts an operand and passes data and addresses to MEM.
+
 MEMORY (given to us) is similar to IFETCH, it waits for an address and maybe data and fetches or send data to the memory unit.
 
 ## About the instruction set
 
 The ARM v2.3 instruction set has a multitude of instructions possible.
+
 The data processing operations includes all simple register to register operation such as arithmetic operation, bitwise logical operation and testing instructions.
+
 The simple memory access operations stores or load data from or to registers. It can also modify base address register with pre or post indexation.
+
 The branch operation are in charge of jumping from one instruction to another way before or way after. It also has the possibility to store the current program counter before jumping. All jump instructions or modifications to the program counter has one delayed slot executed before jumping.
+
 The multiplication operations (not implemented) are as their name suggest a multiplication between 2 words.
+
 The multiple memory access operations (not implemented) allows to store or load multiple data from/to registers.
+
 The swap operation (not implemented) switches the data of 2 registers.
 
 # Usage
 
 ## Package prerequisite
 
-- GHDL
-- arm compiler
-- make
-- GTKWave (optional)
+- `GHDL`
+- an arm compiler
+- `make`
+- `GTKWave` (optional)
 
 ## Compiling
 
@@ -48,6 +58,7 @@ make compile
 ## Compiling ARM programs
 
 The current implementation is capable of executing programs. To do so, you must first compile a program into an arm binary file.
+
 3 labels must be present :
 - _start : what instruction will be first executed
 - _good : when to stop, no errors
@@ -80,6 +91,7 @@ To run compiled programs, use the following command :
 ## Examining trace
 
 The executions will leave a trace when `[--vcd=<vcd-file>.vcd]` is used.
+
 GTKWave is able to read the vcd file, allowing you to view a trace of the execution of your program.
 
 ## More output
